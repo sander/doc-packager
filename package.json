@@ -1,0 +1,16 @@
+{
+  "name": "doc-packager",
+  "version": "0.1.0-SNAPSHOT",
+  "main": "index.js",
+  "scripts": {
+    "test": "cucumber-js"
+  },
+  "dependencies": {
+    "marked": "^4.0.12",
+    "pdfkit": "^0.13.0"
+  },
+  "devDependencies": {
+    "@cucumber/cucumber": "^7.3.2",
+    "prettier": "2.5.1"
+  }
+}
