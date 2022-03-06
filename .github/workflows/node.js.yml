@@ -21,5 +21,6 @@ jobs:
     - run: npm install
     - run: ./node_modules/.bin/cucumber-js --format=message:out.json
     - run: node parse.js > in.tex
-    - run: sudo apt install texlive-luatex
+    - run: sudo apt install -y texlive-luatex
+    - run: sudo tlmgr install latex latex-bin
     - run: lualatex in
