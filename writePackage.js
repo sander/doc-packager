@@ -2,7 +2,14 @@ const { marked } = require("marked");
 const util = require("util");
 const { project, denormalize } = require("./parseCucumberMessages");
 
-module.exports = (readmeSource, messages, out) => {
+const escape = (s) =>
+  s
+    .replace(/\\/g, "\\\\")
+    .replace(/_/g, "\\_")
+    .replace(/\{/g, "\\{")
+    .replace(/\}/g, "\\}");
+
+module.exports = (title, readmeSource, messages, out) => {
   const tokens = marked.lexer(readmeSource);
 
   out.write(`\\documentclass{article}
@@ -40,7 +47,7 @@ module.exports = (readmeSource, messages, out) => {
 
 \\begin{preview}
 
-\\section*{Doc Packager}
+\\section*{${escape(title)}}
 
 \\end{preview}
 
@@ -70,13 +77,6 @@ module.exports = (readmeSource, messages, out) => {
 
   const result = project(messages);
   const denormalized = denormalize(result.gherkinDocuments, result);
-
-  const escape = (s) =>
-    s
-      .replace(/\\/g, "\\\\")
-      .replace(/_/g, "\\_")
-      .replace(/\{/g, "\\{")
-      .replace(/\}/g, "\\}");
 
   for (const doc of denormalized) {
     out.write(`

@@ -10,5 +10,10 @@
   "devDependencies": {
     "@cucumber/cucumber": "^7.3.2",
     "prettier": "2.5.1"
+  },
+  "documentation": {
+    "title": "Doc Packager",
+    "readme": "README.md",
+    "cucumberMessages": "cucumber-output"
   }
 }
