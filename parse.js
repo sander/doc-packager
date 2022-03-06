@@ -16,8 +16,8 @@ out.write(`\\documentclass{article}
 \\usepackage[active,tightpage]{preview}
 \\usepackage{fontspec}
 
-%\\setmainfont{IBM Plex Sans}
-\\setmainfont{iA Writer Quattro S}
+\\setmainfont{IBM Plex Sans}
+%\\setmainfont{iA Writer Quattro S}
 
 \\usepackage{setspace}
 \\setstretch{1.3}
