@@ -14,8 +14,10 @@ Then("c", () => {
   assert.equal(1, 1);
 });
 
-Given("a project", () => {})
+Given("a project", () => {});
 
-When("I execute the program", () => {})
+When("I execute the program", () => {});
 
-Then("I get a PDF", () => { assert.equal(2,2)})
+Then("I get a PDF", () => {
+  assert.equal(2, 2);
+});
