@@ -5,18 +5,11 @@
     [clojure.string :as str]
     [clojure.java.shell :refer [sh]]))
 
-(defmulti project-message (fn [_ m] (println m) (first (keys m))))
-
-(defmethod project-message :default [result message]
-  result)
-
-(defmethod project-message :meta [result {:keys [meta]}]
-  (assoc result :meta meta))
-
-(let [[[k v] & _] {:foo 42}]
-  [k v])
-
-(defmulti project-envelope (fn [_ tag _] tag))
+(defmulti project-envelope
+  "Updates the first argument with the third argument tagged by the second.
+  See https://github.com/cucumber/common/tree/main/messages for a specification
+  of the envelope."
+  (fn [_ tag _] tag))
 
 (defmethod project-envelope :default [result _ _]
   result)
