@@ -1,0 +1,117 @@
+(ns docpkg.main
+  (:require
+    [clojure.data.json :as json]
+    [clojure.java.io :as io]
+    [clojure.string :as str]
+    [clojure.java.shell :refer [sh]]))
+
+(defmulti project-message (fn [_ m] (println m) (first (keys m))))
+
+(defmethod project-message :default [result message]
+  result)
+
+(defmethod project-message :meta [result {:keys [meta]}]
+  (assoc result :meta meta))
+
+(let [[[k v] & _] {:foo 42}]
+  [k v])
+
+(defmulti project-envelope (fn [_ tag _] tag))
+
+(defmethod project-envelope :default [result _ _]
+  result)
+
+(defmethod project-envelope :meta [result _ meta]
+  (assoc result :meta meta))
+
+(defmethod project-envelope :source [result _ {:keys [uri] :as source}]
+  (-> result (assoc-in [:sources-by-uri uri] source)
+             (update :sources conj uri)))
+
+(defmethod project-envelope :gherkinDocument
+  [result _ {uri :uri {:keys [children] :as feature} :feature :as doc}]
+  (-> result (assoc-in [:gherkin-documents-by-uri uri]
+               (assoc feature :children (mapv (comp :id :scenario) children)))
+             (update :gherkin-documents conj uri)
+             (update :scenarios-by-id merge
+               (into {} (map (fn [{{:keys [id steps] :as scenario} :scenario}]
+                               [id (assoc scenario :steps (mapv :id steps))])
+                          children)))
+             (update :gherkin-steps-by-id merge
+               (into {} (mapcat (fn [{{steps :steps} :scenario}]
+                                  (map (juxt :id identity) steps))
+                          children)))))
+
+(defmethod project-envelope :pickle
+  [result _ {:keys [id uri steps astNodeIds :as pickle]}]
+  (-> result (assoc-in [:pickles-by-id id] (assoc pickle :steps (mapv :id steps)))
+             (update :pickles conj id)
+             (update :pickle-steps-by-id merge
+               (into {} (map (fn [{id :id :as step}] [id step]) steps)))))
+
+(defmethod project-envelope :stepDefinition
+  [result _ {id :id :as definition}]
+  (assoc-in result [:step-definitions-by-id id] definition))
+
+;; TODO: testRunStarted, testCaseStarted, testStepStarted, testStepFinished, testCaseFinished, testRunFinished
+
+(defn project-message [result [[tag value] & _]]
+  (project-envelope result tag value))
+
+(comment
+  (def documentation (-> (slurp "../package.json")
+                         (json/read-str :key-fn keyword)
+                         :documentation))
+  (clojure.pprint/pprint
+    (with-open [rdr (io/reader (str "../" (documentation :cucumberMessages)))]
+      (reduce project-message {:sources []
+                               :gherkin-documents []
+                               :pickles []}
+        (->> rdr line-seq (map #(json/read-str % :key-fn keyword))))))
+
+  (with-open [rdr (io/reader (str "../" (documentation :cucumberMessages)))]
+    (doseq [message (->> rdr line-seq (map #(json/read-str % :key-fn keyword)))]
+      (println message))))
+
+(defn escape [s]
+  (reduce (fn [s [from to]]
+            (str/replace s from (str/re-quote-replacement to)))
+    s
+    {#"\\" "\\\\"
+     #"_" "\\_"
+     #"\{" "\\{"
+     #"\}" "\\}"}))
+
+(def header-template (slurp (io/resource "header.tex")))
+(def footer-template (slurp (io/resource "footer.tex")))
+
+(defmacro print-page-with [& body]
+  `(do
+     (println "\\begin{preview}\n")
+     ~@body
+     (println "\\end{preview}\n")))
+
+(defn print-package-code
+  "Writes LaTeX code to *out*."
+  [title readme-path messages]
+  (println (str/replace header-template #"◊title" (escape title)))
+  (let [{:keys [exit out]} (sh "pandoc" "-f" "markdown" "-t" "latex" readme-path)]
+    (assert (= exit 0))
+    (print-page-with
+      (println out)))
+  (println footer-template))
+
+(defn build-package
+  "Uses LaTeX to create a PDF file."
+  [documentation]
+  (with-open [w (io/writer "out.tex")]
+    (binding [*out* w]
+      (print-package-code (documentation :title) (str "../" (documentation :readme)) [])))
+  (let [{:keys [exit out]} (sh "lualatex" "out.tex")]
+    (assert (= exit 0))
+    nil))
+
+(comment
+  (build-package documentation))
+
+;; TODO ensure it can be invoked with an input and an output path
