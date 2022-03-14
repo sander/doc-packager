@@ -52,17 +52,14 @@
   (project-envelope result tag value))
 
 (comment
-  (def documentation (-> (slurp "../package.json")
-                         (json/read-str :key-fn keyword)
-                         :documentation))
   (clojure.pprint/pprint
-    (with-open [rdr (io/reader (str "../" (documentation :cucumberMessages)))]
+    (with-open [rdr (io/reader (str (documentation :cucumberMessages)))]
       (reduce project-message {:sources []
                                :gherkin-documents []
                                :pickles []}
         (->> rdr line-seq (map #(json/read-str % :key-fn keyword))))))
 
-  (with-open [rdr (io/reader (str "../" (documentation :cucumberMessages)))]
+  (with-open [rdr (io/reader (str (documentation :cucumberMessages)))]
     (doseq [message (->> rdr line-seq (map #(json/read-str % :key-fn keyword)))]
       (println message))))
 
@@ -93,7 +90,7 @@
     (print-page-with
       (println out)))
   (let [result
-        (with-open [rdr (io/reader (str "../" messages-path))]
+        (with-open [rdr (io/reader messages-path)]
           (reduce project-message {:sources []
                                    :gherkin-documents []
                                    :pickles []}
@@ -115,7 +112,7 @@
   [documentation]
   (with-open [w (io/writer "out.tex")]
     (binding [*out* w]
-      (print-package-code (documentation :title) (str "../" (documentation :readme)) (documentation :cucumber-messages))))
+      (print-package-code (documentation :title) (documentation :readme) (documentation :cucumber-messages))))
   (let [{:keys [exit out]} (sh "lualatex" "out.tex")]
     (assert (= exit 0))
     nil))
