@@ -51,6 +51,7 @@ jobs:
     - name: Download dependencies
       if: steps.cache-maven.outputs.cache-hit != 'true'
       run: clojure -A:test -Stree
+    - run: sudo apt install pandoc
     - run: clojure -X:main
     - uses: actions/upload-artifact@v3
       with:
