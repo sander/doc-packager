@@ -1,0 +1,8 @@
+.DS_Store
+.idea
+.cpcache
+node_modules
+*.pdf
+*.aux
+*.log
+*.sublime-workspace
