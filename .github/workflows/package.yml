@@ -21,7 +21,7 @@ jobs:
         node-version: 17.x
         cache: 'npm'
     - run: npm install
-    - run: ./node_modules/.bin/cucumber-js --format=message:cucumber-output --format=message:features.html
+    - run: npx cucumber-js --format=message:cucumber-output --format=message:features.html
     - run: sudo apt install -y texlive-luatex texlive-latex-base texlive-latex-recommended texlive-latex-extra preview-latex-style fonts-ibm-plex
     - name: Set up Java
       uses: actions/setup-java@v2

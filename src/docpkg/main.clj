@@ -52,14 +52,17 @@
   (project-envelope result tag value))
 
 (comment
+  (def documentation (-> (slurp "../package.json")
+                         (json/read-str :key-fn keyword)
+                         :documentation))
   (clojure.pprint/pprint
-    (with-open [rdr (io/reader (str (documentation :cucumberMessages)))]
+    (with-open [rdr (io/reader (str "../" (documentation :cucumberMessages)))]
       (reduce project-message {:sources []
                                :gherkin-documents []
                                :pickles []}
         (->> rdr line-seq (map #(json/read-str % :key-fn keyword))))))
 
-  (with-open [rdr (io/reader (str (documentation :cucumberMessages)))]
+  (with-open [rdr (io/reader (str "../" (documentation :cucumberMessages)))]
     (doseq [message (->> rdr line-seq (map #(json/read-str % :key-fn keyword)))]
       (println message))))
 
@@ -85,12 +88,12 @@
   "Writes LaTeX code to *out*."
   [title readme-path messages-path]
   (println (str/replace header-template #"◊title" (escape title)))
-  (let [{:keys [exit out]} (sh "pandoc" "-f" "markdown" "-t" "latex" readme-path)]
-    (assert (= exit 0))
+  (let [{:keys [exit out error err]} (sh "pandoc" "-f" "markdown" "-t" "latex" readme-path)]
+    (assert (= exit 0) (str "assertion failed:" out error err))
     (print-page-with
       (println out)))
   (let [result
-        (with-open [rdr (io/reader messages-path)]
+        (with-open [rdr (io/reader (str messages-path))]
           (reduce project-message {:sources []
                                    :gherkin-documents []
                                    :pickles []}
@@ -110,12 +113,15 @@
 (defn build-package
   "Uses LaTeX to create a PDF file."
   [documentation]
-  (with-open [w (io/writer "out.tex")]
-    (binding [*out* w]
-      (print-package-code (documentation :title) (documentation :readme) (documentation :cucumber-messages))))
-  (let [{:keys [exit out]} (sh "lualatex" "out.tex")]
-    (assert (= exit 0))
-    nil))
+  (try
+    (do
+      (with-open [w (io/writer "out.tex")]
+        (binding [*out* w]
+          (print-package-code (documentation :title) (documentation :readme) (documentation :cucumber-messages))))
+      (let [{:keys [exit out]} (sh "lualatex" "out.tex")]
+        (assert (= exit 0))
+        nil))
+    (catch Exception e (println "Caught exception" (.getMessage e) e))))
 
 (comment
   (build-package documentation))
