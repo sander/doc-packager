@@ -10,6 +10,8 @@ jobs:
   build:
 
     runs-on: ubuntu-latest
+    env:
+      CLOJURE_VERSION: 1.10.3.1087
 
     steps:
     - uses: actions/checkout@v2
@@ -20,10 +22,37 @@ jobs:
         cache: 'npm'
     - run: npm install
     - run: ./node_modules/.bin/cucumber-js --format=message:cucumber-output --format=message:features.html
-    - run: node main > in.tex
     - run: sudo apt install -y texlive-luatex texlive-latex-base texlive-latex-recommended texlive-latex-extra preview-latex-style fonts-ibm-plex
-    - run: lualatex in
+    - name: Set up Java
+      uses: actions/setup-java@v2
+      with:
+        distribution: adopt
+        java-version: 11
+    - name: Cache Clojure install
+      id: cache-clojure
+      uses: actions/cache@v2
+      with:
+        path: ~/bin/clojure
+        key: ${{ env.CLOJURE_VERSION }}
+    - name: Set up Clojure
+      if: steps.cache-clojure.outputs.cache-hit != 'true'
+      run: |
+        curl -O https://download.clojure.org/install/linux-install-${CLOJURE_VERSION}.sh
+        chmod +x linux-install-${CLOJURE_VERSION}.sh
+        sudo ./linux-install-${CLOJURE_VERSION}.sh --prefix ~/bin/clojure
+    - name: Add Clojure to path
+      run: echo "$HOME/bin/clojure/bin" >> $GITHUB_PATH
+    - name: Cache maven artifacts
+      id: cache-maven
+      uses: actions/cache@v2
+      with:
+        path: ~/.m2
+        key: ${{ runner.os }}-${{ hashFiles('deps.edn') }}
+    - name: Download dependencies
+      if: steps.cache-maven.outputs.cache-hit != 'true'
+      run: clojure -A:test -Stree
+    - run: clj -X:main
     - uses: actions/upload-artifact@v3
       with:
         name: package
-        path: in.pdf
+        path: out.pdf
