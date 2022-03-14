@@ -1,3 +1,9 @@
 {:deps {org.clojure/clojure {:mvn/version "1.10.3"}
         org.clojure/data.json {:mvn/version "2.4.0"}}
- :paths ["src" "resources"]}
+ :paths ["src" "resources"]
+ :aliases
+ {:main
+  {:exec-fn docpkg.main/build-package
+   :exec-args {:title "Doc Packager"
+               :readme "README.md"
+               :cucumber-messages "cucumber-output"}}}}

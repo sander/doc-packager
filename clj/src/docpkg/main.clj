@@ -86,12 +86,28 @@
 
 (defn print-package-code
   "Writes LaTeX code to *out*."
-  [title readme-path messages]
+  [title readme-path messages-path]
   (println (str/replace header-template #"◊title" (escape title)))
   (let [{:keys [exit out]} (sh "pandoc" "-f" "markdown" "-t" "latex" readme-path)]
     (assert (= exit 0))
     (print-page-with
       (println out)))
+  (let [result
+        (with-open [rdr (io/reader (str "../" messages-path))]
+          (reduce project-message {:sources []
+                                   :gherkin-documents []
+                                   :pickles []}
+                         (->> rdr line-seq (map #(json/read-str % :key-fn keyword)))))]
+    (doseq [doc (map (:gherkin-documents-by-uri result) (:gherkin-documents result))]
+      (print-page-with
+        (println (str "\\section*{" (escape (:keyword doc)) ": " (escape (:name doc)) "}"))
+        (doseq [{:keys [keyword name steps]} (map (:scenarios-by-id result) (:children doc))]
+          (println (str "\\subsection*{" (escape keyword) ": " (escape name) "}"))
+          (doall
+            (->> (for [{:keys [keyword text]} (map (:gherkin-steps-by-id result) steps)]
+                  (str "\\textit{" keyword "}" text))
+                 (interpose "\\\\")
+                 (map println)))))))
   (println footer-template))
 
 (defn build-package
@@ -99,7 +115,7 @@
   [documentation]
   (with-open [w (io/writer "out.tex")]
     (binding [*out* w]
-      (print-package-code (documentation :title) (str "../" (documentation :readme)) [])))
+      (print-package-code (documentation :title) (str "../" (documentation :readme)) (documentation :cucumber-messages))))
   (let [{:keys [exit out]} (sh "lualatex" "out.tex")]
     (assert (= exit 0))
     nil))

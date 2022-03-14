@@ -5,7 +5,7 @@
 How it works:
 
 1. Define your project in a `README.md` file and in [Gherkin](https://cucumber.io/docs/gherkin/reference/) executable specifications.
-2. Set the `"documentation"` configurations in your `package.json` manifest file to point to the output of previous step.
+2. Set the documentation configurations in your package manifest file to point to the output of previous step.
 3. Run `node main` to process the output into a TeX source file.
 4. Run the LuaLaTeX processor to generate a PDF.
 
