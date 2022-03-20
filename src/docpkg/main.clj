@@ -95,20 +95,9 @@
      ~@body
      (println "\\end{preview}\n")))
 
-(def glossary
-  {::documentation-package
-   {:glossary/name "Documentation package"
-    :glossary/description "A curated collection of rendered documents from one or more repositories."}
-   ::documentation-package-manifest
-   {:glossary/name "Documentation package manifest"
-    :glossary/description "A document listing the source documents to be processed into a documentation package."}
-   ::executable-specification
-   {:glossary/name "Executable specification"
-    :glossary/description "A document describing requirements in a way that can be processed into automated tests."}})
-
 (def glossary (atom {}))
 
-(defmacro defconcept [id name description]
+(defn defconcept [id name description]
   (swap! glossary assoc id {::name name ::description description}))
 
 (defconcept ::documentation-package
@@ -127,7 +116,7 @@
   [glossary]
   (print-page-with
     (println "\\section*{Glossary}")
-    (doseq [[k {:keys [glossary/name glossary/description]}] glossary]
+    (doseq [[k {:keys [::name ::description]}] glossary]
       (println (str "\\textbf{" name ":} " description "\n")))))
 
 (comment
@@ -143,8 +132,9 @@
       (println out)))
   (print-page-with
     (println (str "\\section*{Business processes}"))
-    (println (str "\\includegraphics{out/hello.pdf}")))
-  (print-glossary glossary)
+    (println (str "\\subsection*{Building a package}"))
+    (println (str "\\includegraphics[width=\\columnwidth]{out/hello.pdf}")))
+  (print-glossary @glossary)
   (let [result
         (with-open [rdr (io/reader (str messages-path))]
           (reduce project-message {:sources []
