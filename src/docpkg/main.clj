@@ -6,8 +6,12 @@
     [clojure.java.shell :refer [sh]]))
 
 (defn render-bpmn []
-  (sh "npx" "bpmn-to-image" "--no-footer" "processes/hello.bpmn:out/hello.svg")
-  (sh "inkscape" "--export-type=pdf" "out/hello.svg"))
+  (let [{:keys [exit out err]} (sh "npx" "bpmn-to-image" "--no-footer" "processes/hello.bpmn:out/hello.svg")]
+    (assert (= exit 0) (str "Error while rendering SVG:\n" out \n err))
+    nil)
+  (let [{:keys [exit out err]} (sh "inkscape" "--export-type=pdf" "out/hello.svg")]
+    (assert (= exit 0) (str "Error while converting SVG:\n" out \n err))
+    nil))
 
 (comment
   (render-bpmn))
