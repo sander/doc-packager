@@ -6,4 +6,4 @@
   {:exec-fn docpkg.main/build-package
    :exec-args {:title "Doc Packager"
                :readme "README.md"
-               :cucumber-messages "cucumber-output"}}}}
+               :cucumber-messages "out/cucumber-output"}}}}

@@ -6,7 +6,8 @@
     [clojure.java.shell :refer [sh]]))
 
 (defn render-bpmn []
-  (sh "npx" "bpmn-to-image" "--no-footer" "hello.bpmn:hello.pdf"))
+  (sh "npx" "bpmn-to-image" "--no-footer" "processes/hello.bpmn:out/hello.svg")
+  (sh "inkscape" "--export-type=pdf" "out/hello.svg"))
 
 (comment
   (render-bpmn))
@@ -58,7 +59,7 @@
   (project-envelope result tag value))
 
 (comment
-  (def documentation (-> (slurp "../package.json")
+  (def documentation (-> (slurp "package.json")
                          (json/read-str :key-fn keyword)
                          :documentation))
   (clojure.pprint/pprint
@@ -104,6 +105,9 @@
                                    :gherkin-documents []
                                    :pickles []}
                          (->> rdr line-seq (map #(json/read-str % :key-fn keyword)))))]
+    (print-page-with
+      (println (str "\\section*{Business processes}"))
+      (println (str "\\includegraphics{out/hello.pdf}")))
     (doseq [doc (map (:gherkin-documents-by-uri result) (:gherkin-documents result))]
       (print-page-with
         (println (str "\\section*{" (escape (:keyword doc)) ": " (escape (:name doc)) "}"))
@@ -130,6 +134,6 @@
     (catch Exception e (println "Caught exception" (.getMessage e) e))))
 
 (comment
-  (build-package documentation))
+  (build-package {:title "Testing" :readme "README.md" :cucumber-messages "out/cucumber-output"}))
 
 ;; TODO ensure it can be invoked with an input and an output path
