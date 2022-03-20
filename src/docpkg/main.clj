@@ -7,10 +7,10 @@
 
 (defn render-bpmn []
   (let [{:keys [exit out err]} (sh "npx" "bpmn-to-image" "--no-footer" "processes/hello.bpmn:out/hello.svg")]
-    (assert (= exit 0) (str "Error while rendering SVG:\n" out \n err))
+    (when (not= exit 0) (throw (ex-info "Error while rendering SVG" {:error err :output out})))
     nil)
   (let [{:keys [exit out err]} (sh "inkscape" "out/hello.svg" "--export-pdf=out/hello.pdf")]
-    (assert (= exit 0) (str "Error while converting SVG:\n" out \n err))
+    (when (not= exit 0) (throw (ex-info "Error while converting SVG" {:error err :output out})))
     nil))
 
 (comment
@@ -95,6 +95,44 @@
      ~@body
      (println "\\end{preview}\n")))
 
+(def glossary
+  {::documentation-package
+   {:glossary/name "Documentation package"
+    :glossary/description "A curated collection of rendered documents from one or more repositories."}
+   ::documentation-package-manifest
+   {:glossary/name "Documentation package manifest"
+    :glossary/description "A document listing the source documents to be processed into a documentation package."}
+   ::executable-specification
+   {:glossary/name "Executable specification"
+    :glossary/description "A document describing requirements in a way that can be processed into automated tests."}})
+
+(def glossary (atom {}))
+
+(defmacro defconcept [id name description]
+  (swap! glossary assoc id {::name name ::description description}))
+
+(defconcept ::documentation-package
+  "Documentation package"
+  "A curated collection of rendered documents from one or more repositories.")
+
+(defconcept ::documentation-package-manifest
+  "Documentation package manifest"
+  "A document listing the source documents to be processed into a documentation package.")
+
+(defconcept ::executable-specification
+  "Executable specification"
+  "A document describing requirements in a way that can be processed into automated tests.")
+
+(defn print-glossary
+  [glossary]
+  (print-page-with
+    (println "\\section*{Glossary}")
+    (doseq [[k {:keys [glossary/name glossary/description]}] glossary]
+      (println (str "\\textbf{" name ":} " description "\n")))))
+
+(comment
+  (print-glossary glossary))
+
 (defn print-package-code
   "Writes LaTeX code to *out*."
   [title readme-path messages-path]
@@ -103,15 +141,16 @@
     (assert (= exit 0) (str "assertion failed:" out error err))
     (print-page-with
       (println out)))
+  (print-page-with
+    (println (str "\\section*{Business processes}"))
+    (println (str "\\includegraphics{out/hello.pdf}")))
+  (print-glossary glossary)
   (let [result
         (with-open [rdr (io/reader (str messages-path))]
           (reduce project-message {:sources []
                                    :gherkin-documents []
                                    :pickles []}
                          (->> rdr line-seq (map #(json/read-str % :key-fn keyword)))))]
-    (print-page-with
-      (println (str "\\section*{Business processes}"))
-      (println (str "\\includegraphics{out/hello.pdf}")))
     (doseq [doc (map (:gherkin-documents-by-uri result) (:gherkin-documents result))]
       (print-page-with
         (println (str "\\section*{" (escape (:keyword doc)) ": " (escape (:name doc)) "}"))
