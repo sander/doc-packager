@@ -5,6 +5,12 @@
     [clojure.string :as str]
     [clojure.java.shell :refer [sh]]))
 
+(defn render-bpmn []
+  (sh "npx" "bpmn-to-image" "--no-footer" "hello.bpmn:hello.pdf"))
+
+(comment
+  (render-bpmn))
+
 (defmulti project-envelope
   "Updates the first argument with the third argument tagged by the second.
   See https://github.com/cucumber/common/tree/main/messages for a specification

@@ -5,6 +5,7 @@
     "test": "cucumber-js"
   },
   "dependencies": {
+    "bpmn-to-image": "^0.6.1"
   },
   "devDependencies": {
     "@cucumber/cucumber": "^7.3.2",
