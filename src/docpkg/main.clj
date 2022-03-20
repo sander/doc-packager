@@ -129,7 +129,7 @@
         (binding [*out* w]
           (print-package-code (documentation :title) (documentation :readme) (documentation :cucumber-messages))))
       (let [{:keys [exit out err]} (sh "lualatex" "out.tex")]
-        (assert (= exit 0) err)
+        (assert (= exit 0) (str out \n err))
         nil))
     (catch Exception e (println "Caught exception" (.getMessage e) e))))
 
