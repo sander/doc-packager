@@ -125,6 +125,7 @@
   [documentation]
   (try
     (do
+      (render-bpmn)
       (with-open [w (io/writer "out.tex")]
         (binding [*out* w]
           (print-package-code (documentation :title) (documentation :readme) (documentation :cucumber-messages))))
