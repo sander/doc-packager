@@ -61,5 +61,5 @@ jobs:
         path: pages/docpkg-main.pdf
     - uses: JamesIves/github-pages-deploy-action@v4
       with:
-        branch: gh-pages
+        branch: pages
         folder: pages
