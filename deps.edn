@@ -1,7 +1,6 @@
 {:deps {org.clojure/clojure {:mvn/version "1.10.3"}
         org.clojure/data.json {:mvn/version "2.4.0"}
-        io.cucumber/cucumber-java8 {:mvn/version "7.2.3"}
-        org.junit.jupiter/junit-jupiter-api {:mvn/version "5.8.2"}}
+        io.cucumber/cucumber-java {:mvn/version "7.2.3"}}
  :paths ["src" "resources" "classes"]
  :aliases
  {:main
