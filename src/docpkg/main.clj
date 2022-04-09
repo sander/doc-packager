@@ -126,15 +126,13 @@
   "Writes LaTeX code to *out*."
   [title readme-path messages-path]
   (println (str/replace header-template #"◊title" (escape title)))
+  (print-page-with (println "\\section*{Context}"))
   (let [{:keys [exit out error err]} (sh "pandoc" "-f" "markdown" "-t" "latex" readme-path)]
     (assert (= exit 0) (str "assertion failed:" out error err))
     (print-page-with
       (println out)))
-  (print-page-with
-    (println (str "\\section*{Business processes}"))
-    (println (str "\\subsection*{Building a package}"))
-    (println (str "\\includegraphics[width=\\columnwidth]{out/hello.pdf}")))
   (print-glossary @glossary)
+  (print-page-with (println "\\section*{Requirements}"))
   (let [result
         (with-open [rdr (io/reader (str messages-path))]
           (reduce project-message {:sources []
@@ -151,6 +149,13 @@
                   (str "\\textit{" keyword "}" text))
                  (interpose "\\\\")
                  (map println)))))))
+  (print-page-with (println "\\section*{Solution design}"))
+  (print-page-with
+    (println (str "\\section*{Business processes}"))
+    (println (str "\\subsection*{Building a package}"))
+    (println (str "\\includegraphics[width=\\columnwidth]{out/hello.pdf}")))
+  (print-page-with (println "\\section*{Validation}"))
+  (print-page-with (println "\\section*{Implementation blueprint}"))
   (println footer-template))
 
 (defn build-package
