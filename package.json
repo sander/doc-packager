@@ -1,19 +1,10 @@
 {
   "name": "doc-packager",
   "version": "0.1.0-SNAPSHOT",
-  "scripts": {
-    "test": "cucumber-js"
-  },
   "dependencies": {
     "bpmn-to-image": "^0.6.1"
   },
   "devDependencies": {
-    "@cucumber/cucumber": "^7.3.2",
     "prettier": "2.5.1"
-  },
-  "documentation": {
-    "title": "Doc Packager",
-    "readme": "README.md",
-    "cucumberMessages": "cucumber-output"
   }
 }

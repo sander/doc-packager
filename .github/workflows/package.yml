@@ -22,7 +22,6 @@ jobs:
         cache: 'npm'
     - run: npm install
     - run: mkdir -p out
-    - run: npx cucumber-js --format=message:out/cucumber-output --format=message:out/features.html
     - run: sudo apt install -y texlive-luatex texlive-latex-base texlive-latex-recommended texlive-latex-extra preview-latex-style fonts-ibm-plex inkscape
     - name: Set up Java
       uses: actions/setup-java@v2
@@ -52,6 +51,7 @@ jobs:
     - name: Download dependencies
       if: steps.cache-maven.outputs.cache-hit != 'true'
       run: clojure -A:test -Stree
+    - run: clojure -T:build test
     - run: sudo apt install pandoc
     - run: clojure -X:main
     - run: mkdir pages && mv out.pdf pages/docpkg-main.pdf

@@ -15,4 +15,5 @@
   (compile s)
   (b/process (b/java-command {:main "io.cucumber.core.cli.Main"
                               :java-opts ["-enableassertions"]
+                              :main-args ["--plugin" "message:out/cucumber-output" "--plugin" "html:out/features.html"]
                               :basis basis})))
