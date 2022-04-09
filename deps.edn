@@ -1,9 +1,13 @@
 {:deps {org.clojure/clojure {:mvn/version "1.10.3"}
-        org.clojure/data.json {:mvn/version "2.4.0"}}
- :paths ["src" "resources"]
+        org.clojure/data.json {:mvn/version "2.4.0"}
+        io.cucumber/cucumber-java8 {:mvn/version "7.2.3"}
+        org.junit.jupiter/junit-jupiter-api {:mvn/version "5.8.2"}}
+ :paths ["src" "resources" "classes"]
  :aliases
  {:main
   {:exec-fn docpkg.main/build-package
    :exec-args {:title "Doc Packager"
                :readme "README.md"
-               :cucumber-messages "out/cucumber-output"}}}}
+               :cucumber-messages "out/cucumber-output"}}
+  :build {:deps {io.github.clojure/tools.build {:git/tag "v0.8.1" :git/sha "7d40500"}}
+          :ns-default build}}}
