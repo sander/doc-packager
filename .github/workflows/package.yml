@@ -54,7 +54,12 @@ jobs:
       run: clojure -A:test -Stree
     - run: sudo apt install pandoc
     - run: clojure -X:main
+    - run: mkdir pages && mv out.pdf pages/docpkg-main.pdf
     - uses: actions/upload-artifact@v3
       with:
         name: package
-        path: out.pdf
+        path: pages/docpkg-main.pdf
+    - uses: JamesIves/github-pages-deploy-action@v4
+      with:
+        branch: gh-pages
+        folder: public
