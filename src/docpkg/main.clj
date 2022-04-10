@@ -3,18 +3,43 @@
     [clojure.data.json :as json]
     [clojure.java.io :as io]
     [clojure.string :as str]
-    [clojure.java.shell :refer [sh]]))
+    [clojure.java.shell :refer [sh]]
+    [clojure.test :refer [with-test deftest is run-tests]])
+  (:import
+    [java.io File]))
 
-(defn render-bpmn []
-  (let [{:keys [exit out err]} (sh "npx" "bpmn-to-image" "--no-footer" "processes/hello.bpmn:out/hello.svg")]
-    (when (not= exit 0) (throw (ex-info "Error while rendering SVG" {:error err :output out})))
-    nil)
-  (let [{:keys [exit out err]} (sh "inkscape" "out/hello.svg" "--export-pdf=out/hello.pdf")]
-    (when (not= exit 0) (throw (ex-info "Error while converting SVG" {:error err :output out})))
-    nil))
+(with-test
+  (defn- expect-success [{:keys [exit out err]} error-description]
+    (when (not= exit 0)
+      (throw (ex-info error-description {:error err :output out}))))
+  (is (nil? (expect-success {:exit 0} "Error")))
+  (is (thrown? RuntimeException (expect-success {:exit 1} "Error"))))
 
 (comment
-  (render-bpmn))
+  (remove-ns 'docpkg.main)
+  (run-tests))
+
+(defmulti render! (fn [from-type _ to-type _] [from-type to-type]))
+
+(defmethod render! [::business-process-model ::portable-document]
+  [_ from-path _ to-path]
+  (when (not (and from-path to-path))
+    (throw (IllegalArgumentException. "Must specify from-path and to-path")))
+  (when (.contains from-path ":")
+    (throw (IllegalArgumentException. "from-path may contain no colon")))
+  (let [tmp-file (File/createTempFile "diagram" ".svg")
+        tmp-path (.getPath tmp-file)]
+    (try
+      (-> (sh "npx" "bpmn-to-image" "--no-footer" (str from-path \: tmp-path))
+        (expect-success "Error while rendering to SVG"))
+      (-> (sh "inkscape" tmp-path (str "--export-pdf=" to-path))
+        (expect-success "Error while converting SVG"))
+      (finally (.delete tmp-file)))))
+
+(comment
+  (render!
+    ::business-process-model "processes/hello.bpmn"
+    ::portable-document "out/hello.pdf"))
 
 (defmulti project-envelope
   "Updates the first argument with the third argument tagged by the second.
@@ -163,7 +188,8 @@
   [documentation]
   (try
     (do
-      (render-bpmn)
+      (render! ::business-process-model "processes/hello.bpmn"
+               ::portable-document "out/hello.pdf")
       (with-open [w (io/writer "out.tex")]
         (binding [*out* w]
           (print-package-code (documentation :title) (documentation :readme) (documentation :cucumber-messages))))

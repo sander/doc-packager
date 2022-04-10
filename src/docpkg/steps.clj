@@ -14,7 +14,8 @@
   (assert (.exists (io/file "processes/hello.bpmn"))))
 
 (defn -i_render_it_to_pdf [_]
-  (d/render-bpmn))
+  (d/render! ::d/business-process-model "processes/hello.bpmn"
+             ::d/portable-document "out/hello.pdf"))
 
 (defn -i_have_a_pdf_file [_]
   (assert (.exists (io/file "out/hello.pdf"))))
