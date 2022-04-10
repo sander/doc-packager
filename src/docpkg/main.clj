@@ -19,27 +19,40 @@
   (remove-ns 'docpkg.main)
   (run-tests))
 
-(defmulti render! (fn [from-type _ to-type _] [from-type to-type]))
+(defmulti render (fn [from-type _ to-type] [from-type to-type]))
 
-(defmethod render! [::business-process-model ::portable-document]
-  [_ from-path _ to-path]
-  (when (not (and from-path to-path))
-    (throw (IllegalArgumentException. "Must specify from-path and to-path")))
-  (when (.contains from-path ":")
-    (throw (IllegalArgumentException. "from-path may contain no colon")))
-  (let [tmp-file (File/createTempFile "diagram" ".svg")
-        tmp-path (.getPath tmp-file)]
+(defmethod render [::business-process-model ::portable-document]
+  [_ in _]
+  (let [tmp-bpmn (File/createTempFile "model" ".bpmn")
+        tmp-svg (File/createTempFile "process" ".svg")
+        tmp-pdf (File/createTempFile "document" ".pdf")]
+    (io/copy (io/reader in) tmp-bpmn)
     (try
-      (-> (sh "npx" "bpmn-to-image" "--no-footer" (str from-path \: tmp-path))
+      (-> (sh "npx" "bpmn-to-image" "--no-footer"
+            (str (.getPath tmp-bpmn) \: (.getPath tmp-svg)))
         (expect-success "Error while rendering to SVG"))
-      (-> (sh "inkscape" tmp-path (str "--export-pdf=" to-path))
+      (finally (.delete tmp-bpmn)))
+    (try
+      (-> (sh "inkscape" (.getPath tmp-svg)
+            (str "--export-pdf=" (.getPath tmp-pdf)))
         (expect-success "Error while converting SVG"))
-      (finally (.delete tmp-file)))))
+      (finally (.delete tmp-svg)))
+    (let [out (io/input-stream tmp-pdf)]
+      (proxy [java.io.InputStream] []
+        (read
+          ([] (.read out))
+          ([b] (.read out b))
+          ([b off len] (.read out b off len)))
+        (available [] (.available out))
+        (close []
+          (.close out)
+          (.delete tmp-pdf))
+        (markSupported [] false)
+        (skip [n] (.skip out n))))))
 
 (comment
-  (render!
-    ::business-process-model "processes/hello.bpmn"
-    ::portable-document "out/hello.pdf"))
+  (with-open [r (render ::business-process-model "processes/hello.bpmn" ::portable-document)]
+    (io/copy r (io/file "out/test.pdf"))))
 
 (defmulti project-envelope
   "Updates the first argument with the third argument tagged by the second.
@@ -188,8 +201,9 @@
   [documentation]
   (try
     (do
-      (render! ::business-process-model "processes/hello.bpmn"
-               ::portable-document "out/hello.pdf")
+      (with-open [r (render ::business-process-model "processes/hello.bpmn"
+                      ::portable-document)]
+        (io/copy r (io/file "out/hello.pdf")))
       (with-open [w (io/writer "out.tex")]
         (binding [*out* w]
           (print-package-code (documentation :title) (documentation :readme) (documentation :cucumber-messages))))
