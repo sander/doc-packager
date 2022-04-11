@@ -4,7 +4,7 @@
     [clojure.java.io :as io]
     [clojure.string :as str]
     [clojure.java.shell :refer [sh]]
-    [clojure.test :refer [with-test deftest is run-tests]])
+    [clojure.test :refer [with-test deftest is run-tests run-test]])
   (:import
     [java.io File]
     [java.nio.file Files StandardOpenOption]))
@@ -27,15 +27,22 @@
 
 (defmulti render (fn [from-type _ to-type] [from-type to-type]))
 
-(defn- render-bpmn-to-svg-file [bpmn-file svg-file]
-  (-> (sh "npx" "bpmn-to-image" "--no-footer"
-        (str (.getPath bpmn-file) \: (.getPath svg-file)))
-    (expect-success "Error while rendering BPMN to SVG")))
+(with-test
+  (defn- bpmn-to-svg-command [bpmn-file svg-file]
+    ["npx" "bpmn-to-image" "--no-footer"
+     (str (.getPath bpmn-file) \: (.getPath svg-file))])
+  (is (= (bpmn-to-svg-command (File. "foo.bpmn") (File. "bar.svg"))
+        ["npx" "bpmn-to-image" "--no-footer" "foo.bpmn:bar.svg"])))
 
-(defn- render-svg-to-pdf-file [svg-file pdf-file]
-  (-> (sh "inkscape" (.getPath svg-file)
-        (str "--export-pdf=" (.getPath pdf-file)))
-    (expect-success "Error while converting SVG")))
+(with-test
+  (defn- svg-to-pdf-command [svg-file pdf-file]
+    ["inkscape" (.getPath svg-file) (str "--export-pdf=" (.getPath pdf-file))])
+  (is (= (svg-to-pdf-command (File. "foo.svg") (File. "bar.pdf"))
+        ["inkscape" "foo.svg" "--export-pdf=bar.pdf"])))
+
+(comment
+  (run-test bpmn-to-svg-command)
+  (run-test svg-to-pdf-command))
 
 (defconcept ::business-process-model
   "Business process model"
@@ -51,9 +58,11 @@
     (let [tmp-svg (File/createTempFile "process" ".svg")]
       (let [tmp-bpmn (File/createTempFile "model" ".bpmn")]
         (io/copy (io/reader in) tmp-bpmn)
-        (try (render-bpmn-to-svg-file tmp-bpmn tmp-svg)
+        (try (expect-success (apply sh (bpmn-to-svg-command tmp-bpmn tmp-svg))
+               "Error while converting to SVG")
              (finally (.delete tmp-bpmn))))
-      (try (render-svg-to-pdf-file tmp-svg tmp-pdf)
+      (try (expect-success (apply sh (svg-to-pdf-command tmp-svg tmp-pdf))
+             "Error while converting to PDF")
            (finally (.delete tmp-svg))))
     (Files/newInputStream (.toPath tmp-pdf)
       (into-array [StandardOpenOption/DELETE_ON_CLOSE]))))
