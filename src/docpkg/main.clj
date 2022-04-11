@@ -9,6 +9,11 @@
     [java.io File]
     [java.nio.file Files StandardOpenOption]))
 
+(def glossary (atom {}))
+
+(defn defconcept [id name description]
+  (swap! glossary assoc id {::name name ::description description}))
+
 (with-test
   (defn- expect-success [{:keys [exit out err]} error-description]
     (when (not= exit 0)
@@ -31,6 +36,14 @@
   (-> (sh "inkscape" (.getPath svg-file)
         (str "--export-pdf=" (.getPath pdf-file)))
     (expect-success "Error while converting SVG")))
+
+(defconcept ::business-process-model
+  "Business process model"
+  "A model for the end to end flow of a business process, enabling understanding and communication in a standard way (typically BPMN).")
+
+(defconcept ::portable-document
+  "Portable document"
+  "A document that is presented independently of application software, hardware, and operating systems. Typically in PDF format.")
 
 (defmethod render [::business-process-model ::portable-document]
   [_ in _]
@@ -127,11 +140,6 @@
      (println "\\begin{preview}\n")
      ~@body
      (println "\\end{preview}\n")))
-
-(def glossary (atom {}))
-
-(defn defconcept [id name description]
-  (swap! glossary assoc id {::name name ::description description}))
 
 (defconcept ::documentation-package
   "Documentation package"
