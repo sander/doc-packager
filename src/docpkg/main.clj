@@ -6,7 +6,8 @@
     [clojure.java.shell :refer [sh]]
     [clojure.test :refer [with-test deftest is run-tests]])
   (:import
-    [java.io File]))
+    [java.io File]
+    [java.nio.file Files StandardOpenOption]))
 
 (with-test
   (defn- expect-success [{:keys [exit out err]} error-description]
@@ -21,34 +22,28 @@
 
 (defmulti render (fn [from-type _ to-type] [from-type to-type]))
 
+(defn- render-bpmn-to-svg-file [bpmn-file svg-file]
+  (-> (sh "npx" "bpmn-to-image" "--no-footer"
+        (str (.getPath bpmn-file) \: (.getPath svg-file)))
+    (expect-success "Error while rendering BPMN to SVG")))
+
+(defn- render-svg-to-pdf-file [svg-file pdf-file]
+  (-> (sh "inkscape" (.getPath svg-file)
+        (str "--export-pdf=" (.getPath pdf-file)))
+    (expect-success "Error while converting SVG")))
+
 (defmethod render [::business-process-model ::portable-document]
   [_ in _]
-  (let [tmp-bpmn (File/createTempFile "model" ".bpmn")
-        tmp-svg (File/createTempFile "process" ".svg")
-        tmp-pdf (File/createTempFile "document" ".pdf")]
-    (io/copy (io/reader in) tmp-bpmn)
-    (try
-      (-> (sh "npx" "bpmn-to-image" "--no-footer"
-            (str (.getPath tmp-bpmn) \: (.getPath tmp-svg)))
-        (expect-success "Error while rendering to SVG"))
-      (finally (.delete tmp-bpmn)))
-    (try
-      (-> (sh "inkscape" (.getPath tmp-svg)
-            (str "--export-pdf=" (.getPath tmp-pdf)))
-        (expect-success "Error while converting SVG"))
-      (finally (.delete tmp-svg)))
-    (let [out (io/input-stream tmp-pdf)]
-      (proxy [java.io.InputStream] []
-        (read
-          ([] (.read out))
-          ([b] (.read out b))
-          ([b off len] (.read out b off len)))
-        (available [] (.available out))
-        (close []
-          (.close out)
-          (.delete tmp-pdf))
-        (markSupported [] false)
-        (skip [n] (.skip out n))))))
+  (let [tmp-pdf (File/createTempFile "document" ".pdf")]
+    (let [tmp-svg (File/createTempFile "process" ".svg")]
+      (let [tmp-bpmn (File/createTempFile "model" ".bpmn")]
+        (io/copy (io/reader in) tmp-bpmn)
+        (try (render-bpmn-to-svg-file tmp-bpmn tmp-svg)
+             (finally (.delete tmp-bpmn))))
+      (try (render-svg-to-pdf-file tmp-svg tmp-pdf)
+           (finally (.delete tmp-svg))))
+    (Files/newInputStream (.toPath tmp-pdf)
+      (into-array [StandardOpenOption/DELETE_ON_CLOSE]))))
 
 (comment
   (with-open [r (render ::business-process-model "processes/hello.bpmn" ::portable-document)]
