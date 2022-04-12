@@ -25,7 +25,7 @@
   (remove-ns 'docpkg.main)
   (run-tests))
 
-(defmulti render (fn [from-type _ to-type] [from-type to-type]))
+(defmulti convert (fn [_ from-type to-type] [from-type to-type]))
 
 (with-test
   (defn- bpmn-to-svg-command [bpmn-file svg-file]
@@ -52,8 +52,8 @@
   "Portable document"
   "A document that is presented independently of application software, hardware, and operating systems. Typically in PDF format.")
 
-(defmethod render [::business-process-model ::portable-document]
-  [_ in _]
+(defmethod convert [::business-process-model ::portable-document]
+  [in _ _]
   (let [tmp-pdf (File/createTempFile "document" ".pdf")]
     (let [tmp-svg (File/createTempFile "process" ".svg")]
       (let [tmp-bpmn (File/createTempFile "model" ".bpmn")]
@@ -68,7 +68,7 @@
       (into-array [StandardOpenOption/DELETE_ON_CLOSE]))))
 
 (comment
-  (with-open [r (render ::business-process-model "processes/hello.bpmn" ::portable-document)]
+  (with-open [r (convert "processes/hello.bpmn" ::business-process-model ::portable-document)]
     (io/copy r (io/file "out/test.pdf"))))
 
 (defmulti project-envelope
@@ -213,8 +213,8 @@
   [documentation]
   (try
     (do
-      (with-open [r (render ::business-process-model "processes/hello.bpmn"
-                      ::portable-document)]
+      (with-open [r (convert "processes/hello.bpmn"
+                      ::business-process-model ::portable-document)]
         (io/copy r (io/file "out/hello.pdf")))
       (with-open [w (io/writer "out.tex")]
         (binding [*out* w]
