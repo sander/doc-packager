@@ -23,6 +23,18 @@
   (is (nil? (expect-success {:exit 0} "Error")))
   (is (thrown? RuntimeException (expect-success {:exit 1} "Error"))))
 
+(defn- path [s]
+  (.getPath (FileSystems/getDefault) s (into-array String [])))
+
+(defn zip-directory [f]
+  (expect-success
+    (sh "zip" "-r" (str "../" (.getFileName (path f)) ".website") "." :dir f)
+    "Could not zip"))
+
+(comment
+  (zip-directory "target/static")
+  (.getFileName (.getPath (FileSystems/getDefault) "target/static" (into-array String []))))
+
 (comment
   (remove-ns 'docpkg.main)
   (run-tests))
@@ -178,6 +190,9 @@
   "Writes LaTeX code to *out*."
   [title readme-path messages-path]
   (println (str/replace header-template #"◊title" (escape title)))
+  (print-page-with
+    (println "\\section*{Attachments}")
+    (println "\\textattachfile{../static.website}{\\textcolor{blue}{Static website}}"))
   (print-page-with (println "\\section*{Context}"))
   (let [{:keys [exit out error err]} (sh "pandoc" "-f" "markdown" "-t" "latex" readme-path)]
     (assert (= exit 0) (str "assertion failed:" out error err))
@@ -216,6 +231,7 @@
   (try
     (do
       (io/make-parents "target/tex/out.tex")
+      (zip-directory "target/static")
       (with-open [r (convert "processes/hello.bpmn"
                       ::business-process-model ::portable-document)]
         (io/copy r (io/file "target/hello.pdf")))
