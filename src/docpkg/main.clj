@@ -2,6 +2,7 @@
   (:require
     [clojure.data.json :as json]
     [clojure.java.io :as io]
+    [clojure.spec.alpha :as s]
     [clojure.string :as str]
     [clojure.java.shell :refer [sh]]
     [clojure.test :refer [with-test deftest is run-tests run-test]])
@@ -228,3 +229,50 @@
   (build-package {:title "Testing" :readme "README.md" :cucumber-messages "out/cucumber-output"}))
 
 ;; TODO ensure it can be invoked with an input and an output path
+
+(defn- step-description->symbol [s]
+  (symbol (-> s
+            (str/replace #" " "_")
+            (str/replace #"[^a-zA-Z\d]" "_")
+            (str/lower-case))))
+
+(s/def ::step (s/cat
+                :keyword #{'Given 'When 'Then}
+                :description string?
+                :body (s/* any?)))
+
+(defmacro ^:private defsteps [& body]
+  (let [prefix "step-"]
+    `(~'do
+       (~'gen-class
+         :name ~(str (.getName *ns*) "/StepDefinitions")
+         :prefix ~prefix
+         :methods ~(->> body (map (partial s/conform ::step))
+                     (mapv (fn [{:keys [keyword description]}]
+                            `[~(with-meta
+                                 (step-description->symbol description)
+                                 `{~({'Given 'io.cucumber.java.en.Given
+                                      'When 'io.cucumber.java.en.When
+                                      'Then 'io.cucumber.java.en.Then}
+                                     keyword)
+                                   ~description})
+                              []
+                              ~'void]))))
+       ~@(map (fn [x]
+                (let [{:keys [description body]} (s/conform ::step x)]
+                  `(~'defn
+                     ~(symbol (str prefix
+                                (step-description->symbol description)))
+                     [~'_]
+                     ~@body)))
+           body))))
+
+(defsteps
+  (Given "a BPMN model"
+    (assert (.exists (io/file "processes/hello.bpmn"))))
+  (When "I render it to PDF"
+    (with-open [r (convert "processes/hello.bpmn" ::business-process-model
+                    ::portable-document)]
+      (io/copy r (io/file "out/hello.pdf"))))
+  (Then "I have a PDF file"
+    (assert (.exists (io/file "out/hello.pdf")))))
