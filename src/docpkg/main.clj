@@ -8,7 +8,8 @@
     [clojure.test :refer [with-test deftest is run-tests run-test]])
   (:import
     [java.io File]
-    [java.nio.file Files StandardOpenOption]))
+    [java.nio.file Files Paths FileSystems Path StandardOpenOption]
+    [java.nio.file.attribute FileAttribute]))
 
 (def glossary (atom {}))
 
@@ -204,7 +205,7 @@
   (print-page-with
     (println (str "\\section*{Business processes}"))
     (println (str "\\subsection*{Building a package}"))
-    (println (str "\\includegraphics[width=\\columnwidth]{out/hello.pdf}")))
+    (println (str "\\includegraphics[width=\\columnwidth]{../hello.pdf}")))
   (print-page-with (println "\\section*{Validation}"))
   (print-page-with (println "\\section*{Implementation blueprint}"))
   (println footer-template))
@@ -214,18 +215,20 @@
   [documentation]
   (try
     (do
+      (io/make-parents "target/tex/out.tex")
       (with-open [r (convert "processes/hello.bpmn"
                       ::business-process-model ::portable-document)]
-        (io/copy r (io/file "out/hello.pdf")))
-      (with-open [w (io/writer "out.tex")]
+        (io/copy r (io/file "target/hello.pdf")))
+      (with-open [w (io/writer "target/tex/out.tex")]
         (binding [*out* w]
           (print-package-code (documentation :title) (documentation :readme) (documentation :cucumber-messages))))
-      (let [{:keys [exit out err]} (sh "lualatex" "out.tex")]
+      (let [{:keys [exit out err]} (sh "lualatex" "out.tex" :dir "target/tex")]
         (assert (= exit 0) (str out \n err))
         nil))
     (catch Exception e (println "Caught exception" (.getMessage e) e))))
 
 (comment
+  into-array
   (build-package {:title "Testing" :readme "README.md" :cucumber-messages "out/cucumber-output"}))
 
 ;; TODO ensure it can be invoked with an input and an output path
@@ -271,8 +274,9 @@
   (Given "a BPMN model"
     (assert (.exists (io/file "processes/hello.bpmn"))))
   (When "I render it to PDF"
+    (io/make-parents "target/test/hello.pdf")
     (with-open [r (convert "processes/hello.bpmn" ::business-process-model
                     ::portable-document)]
-      (io/copy r (io/file "out/hello.pdf"))))
+      (io/copy r (io/file "target/test/hello.pdf"))))
   (Then "I have a PDF file"
-    (assert (.exists (io/file "out/hello.pdf")))))
+    (assert (.exists (io/file "target/test/hello.pdf")))))

@@ -54,12 +54,12 @@ jobs:
     - run: clojure -T:build test
     - run: sudo apt install pandoc
     - run: clojure -X:main
-    - run: mkdir pages && mv out.pdf pages/docpkg-main.pdf
+    - run: mkdir target/pages && mv target/tex/out.pdf target/pages/docpkg-main.pdf
     - uses: actions/upload-artifact@v3
       with:
         name: package
-        path: pages/docpkg-main.pdf
+        path: target/pages/docpkg-main.pdf
     - uses: JamesIves/github-pages-deploy-action@v4
       with:
         branch: pages
-        folder: pages
+        folder: target/pages

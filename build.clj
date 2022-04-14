@@ -3,7 +3,7 @@
   (:require [clojure.tools.build.api :as b]))
 
 (def basis (b/create-basis {:project "deps.edn"}))
-(def class-dir "classes")
+(def class-dir "target/classes")
 
 (defn clean [_]
   (b/delete {:path class-dir}))
@@ -15,5 +15,5 @@
   (compile s)
   (b/process (b/java-command {:main "io.cucumber.core.cli.Main"
                               :java-opts ["-enableassertions"]
-                              :main-args ["--plugin" "message:out/cucumber-output" "--plugin" "html:out/features.html"]
+                              :main-args ["--plugin" "message:target/cucumber-output" "--plugin" "html:target/static/index.html"]
                               :basis basis})))

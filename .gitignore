@@ -6,7 +6,7 @@ node_modules
 *.aux
 *.log
 *.sublime-workspace
-out
 .nrepl-port
 out.tex
 *.class
+target
