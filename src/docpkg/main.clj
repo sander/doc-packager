@@ -9,7 +9,8 @@
   (:import
     [java.io File]
     [java.nio.file Files Paths FileSystems Path StandardOpenOption]
-    [java.nio.file.attribute FileAttribute]))
+    [java.nio.file.attribute FileAttribute]
+    [java.util Base64]))
 
 (def glossary (atom {}))
 
@@ -27,13 +28,47 @@
   (.getPath (FileSystems/getDefault) s (into-array String [])))
 
 (defn zip-directory [f]
-  (expect-success
-    (sh "zip" "-r" (str "../" (.getFileName (path f)) ".website") "." :dir f)
-    "Could not zip"))
+  (let [name (str (.getFileName (path f)))
+        tmp (File/createTempFile (str name) ".zip")]
+    (.delete tmp)
+    (println ["zip" "-r" (str (.toPath tmp)) "." :dir f])
+    (-> (sh "zip" "-r" (str (.toPath tmp)) "." :dir f)
+      (expect-success "Could not zip"))
+    (Files/newInputStream (.toPath tmp)
+      (into-array [StandardOpenOption/DELETE_ON_CLOSE]))))
 
 (comment
+  (str (.getFileName (path "target/static")))
+  (.toPath (.getFileName (path "target/static")))
+  (str (.toPath (File/createTempFile (str name) ".zip")))
   (zip-directory "target/static")
   (.getFileName (.getPath (FileSystems/getDefault) "target/static" (into-array String []))))
+
+(defn stream->bytes [in]
+  (let [baos (java.io.ByteArrayOutputStream.)]
+    (io/copy in baos)
+    (.toByteArray baos)))
+
+(defn bytes->base64 [v]
+  (.. (Base64/getUrlEncoder) (encodeToString v)))
+
+(defn wrap [s n]
+  (str/join "\n" (re-seq (re-pattern (str ".{1," n "}")) s)))
+
+(defn wrapper-html
+  [in file-name]
+  (str "<!doctype html>\n<a href=\"data:application/octet-stream,\n"
+    (-> in stream->bytes bytes->base64 (wrap 80))
+    "\n\" download=\"" file-name "\">Download</a>"))
+
+(comment
+  (with-open [f])
+  (io/copy (io/reader (zip-directory "target/static")) (io/writer "target/out.zip"))
+  (spit "target/wrapped.html" (wrapper-html (zip-directory "target/static") "static.zip"))
+  (-> (zip-directory "target/static") stream->bytes bytes->base64 (wrap 80) println)
+  
+  (str/join "\n" (re-seq (re-pattern ".{1,4}") "hello world"))
+  re-seq)
 
 (comment
   (remove-ns 'docpkg.main)
@@ -186,13 +221,21 @@
 (comment
   (print-glossary glossary))
 
+(defn attachment
+  [f title]
+  (str "\\textattachfile{" (.getPath (io/file f)) "}{\\textcolor{blue}{"
+    (escape title) "}}"))
+
 (defn print-package-code
   "Writes LaTeX code to *out*."
   [title readme-path messages-path]
   (println (str/replace header-template #"◊title" (escape title)))
   (print-page-with
+    (println "\\section*{Hyperlink test}")
+    (println "\\href{out.tex}{Example}"))
+  (print-page-with
     (println "\\section*{Attachments}")
-    (println "\\textattachfile{../static.website}{\\textcolor{blue}{Static website}}"))
+    (println (attachment "../../test.html" "HTML file")))
   (print-page-with (println "\\section*{Context}"))
   (let [{:keys [exit out error err]} (sh "pandoc" "-f" "markdown" "-t" "latex" readme-path)]
     (assert (= exit 0) (str "assertion failed:" out error err))
