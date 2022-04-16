@@ -5,17 +5,13 @@
     [clojure.spec.alpha :as s]
     [clojure.string :as str]
     [clojure.java.shell :refer [sh]]
-    [clojure.test :refer [with-test deftest is run-tests run-test]])
+    [clojure.test :refer [with-test deftest is run-tests run-test]]
+    [docpkg.internal :refer [defsteps defconcept *glossary*]])
   (:import
     [java.io File ByteArrayOutputStream ByteArrayInputStream BufferedInputStream]
     [java.nio.file Files Paths FileSystems Path StandardOpenOption]
     [java.nio.file.attribute FileAttribute]
     [java.util Base64]))
-
-(def glossary (atom {}))
-
-(defn defconcept [id name description]
-  (swap! glossary assoc id {::name name ::description description}))
 
 (with-test
   (defn- expect-success [{:keys [exit out err]} error-description]
@@ -216,7 +212,7 @@
   [glossary]
   (print-page-with
     (println "\\section*{Glossary}")
-    (doseq [[k {:keys [::name ::description]}] glossary]
+    (doseq [[k {:keys [:docpkg.internal/name :docpkg.internal/description]}] glossary]
       (println (str "\\textbf{" name ":} " description "\n")))))
 
 (comment
@@ -227,17 +223,23 @@
   (str "\\textattachfile{" (.getPath (io/file f)) "}{\\textcolor{blue}{"
     (escape title) "}}"))
 
+(defn section-header
+  [title]
+  (str "\\begin{center}\n"
+    "\\section*{" title "}\n"
+    "\\end{center}\n"))
+
 (defn print-package-code
   "Writes LaTeX code to *out*."
   [title readme-path messages-path static-web-site-path]
   (println (str/replace header-template #"◊title" (escape title)))
-  (print-page-with (println "\\section*{Context}"))
+  (print-page-with (println (section-header "Context")))
   (let [{:keys [exit out error err]} (sh "pandoc" "-f" "markdown" "-t" "latex" readme-path)]
     (assert (= exit 0) (str "assertion failed:" out error err))
     (print-page-with
       (println out)))
-  (print-glossary @glossary)
-  (print-page-with (println "\\section*{Requirements}"))
+  (print-glossary @*glossary*)
+  (print-page-with (println (section-header "Requirements")))
   (let [result
         (with-open [rdr (io/reader (str messages-path))]
           (reduce project-message {:sources []
@@ -254,17 +256,17 @@
                   (str "\\textit{" keyword "}" text))
                  (interpose "\\\\")
                  (map println)))))))
-  (print-page-with (println "\\section*{Solution design}"))
+  (print-page-with (println (section-header "Solution design")))
   (print-page-with
     (println (str "\\section*{Business processes}"))
     (println (str "\\subsection*{Building a package}"))
     (println (str "\\includegraphics[width=\\columnwidth]{../hello.pdf}")))
-  (print-page-with (println "\\section*{Validation}"))
-  (print-page-with (println "\\section*{Implementation blueprint}"))
-  (print-page-with
-    (println "\\section*{Attachments}"))
+  (print-page-with (println (section-header "Validation")))
+  (print-page-with (println (section-header "Implementation blueprint")))
+  (print-page-with (println (section-header "Attachments")))
   (print-page-with
     (println "\\section*{Static website}")
+    (println "\\begin{tcolorbox}")
     (let [p "static-website.zip"
           f "static-website.html"]
       (spit (str "target/" f)
@@ -276,7 +278,8 @@
         "by double-clicking the link. "
         "On the command line, you can use "
         "\\href{https://www.xpdfreader.com}{Xpdf} with "
-        "\\texttt{pdfdetach -saveall <file.pdf>}.}")))
+        "\\texttt{pdfdetach -saveall <file.pdf>}.}"))
+    (println "\\end{tcolorbox}"))
   (println footer-template))
 
 (defn build-package
@@ -305,43 +308,6 @@
   (build-package {:title "Testing" :readme "README.md" :cucumber-messages "out/cucumber-output"}))
 
 ;; TODO ensure it can be invoked with an input and an output path
-
-(defn- step-description->symbol [s]
-  (symbol (-> s
-            (str/replace #" " "_")
-            (str/replace #"[^a-zA-Z\d]" "_")
-            (str/lower-case))))
-
-(s/def ::step (s/cat
-                :keyword #{'Given 'When 'Then}
-                :description string?
-                :body (s/* any?)))
-
-(defmacro ^:private defsteps [& body]
-  (let [prefix "step-"]
-    `(~'do
-       (~'gen-class
-         :name ~(str (.getName *ns*) "/StepDefinitions")
-         :prefix ~prefix
-         :methods ~(->> body (map (partial s/conform ::step))
-                     (mapv (fn [{:keys [keyword description]}]
-                            `[~(with-meta
-                                 (step-description->symbol description)
-                                 `{~({'Given 'io.cucumber.java.en.Given
-                                      'When 'io.cucumber.java.en.When
-                                      'Then 'io.cucumber.java.en.Then}
-                                     keyword)
-                                   ~description})
-                              []
-                              ~'void]))))
-       ~@(map (fn [x]
-                (let [{:keys [description body]} (s/conform ::step x)]
-                  `(~'defn
-                     ~(symbol (str prefix
-                                (step-description->symbol description)))
-                     [~'_]
-                     ~@body)))
-           body))))
 
 (defsteps
   (Given "a BPMN model"
