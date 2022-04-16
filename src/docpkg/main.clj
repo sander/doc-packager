@@ -7,7 +7,7 @@
     [clojure.java.shell :refer [sh]]
     [clojure.test :refer [with-test deftest is run-tests run-test]])
   (:import
-    [java.io File]
+    [java.io File ByteArrayOutputStream ByteArrayInputStream BufferedInputStream]
     [java.nio.file Files Paths FileSystems Path StandardOpenOption]
     [java.nio.file.attribute FileAttribute]
     [java.util Base64]))
@@ -31,44 +31,45 @@
   (let [name (str (.getFileName (path f)))
         tmp (File/createTempFile (str name) ".zip")]
     (.delete tmp)
-    (println ["zip" "-r" (str (.toPath tmp)) "." :dir f])
     (-> (sh "zip" "-r" (str (.toPath tmp)) "." :dir f)
       (expect-success "Could not zip"))
-    (Files/newInputStream (.toPath tmp)
-      (into-array [StandardOpenOption/DELETE_ON_CLOSE]))))
-
-(comment
-  (str (.getFileName (path "target/static")))
-  (.toPath (.getFileName (path "target/static")))
-  (str (.toPath (File/createTempFile (str name) ".zip")))
-  (zip-directory "target/static")
-  (.getFileName (.getPath (FileSystems/getDefault) "target/static" (into-array String []))))
+    (BufferedInputStream.
+      (Files/newInputStream (.toPath tmp)
+        (into-array [StandardOpenOption/DELETE_ON_CLOSE])))))
 
 (defn stream->bytes [in]
-  (let [baos (java.io.ByteArrayOutputStream.)]
-    (io/copy in baos)
+  (let [baos (ByteArrayOutputStream.)]
+    (.transferTo in baos)
     (.toByteArray baos)))
 
 (defn bytes->base64 [v]
-  (.. (Base64/getUrlEncoder) (encodeToString v)))
+  (.. (Base64/getEncoder) (encodeToString v)))
 
 (defn wrap [s n]
   (str/join "\n" (re-seq (re-pattern (str ".{1," n "}")) s)))
 
 (defn wrapper-html
+  "Wraps a binary file an HTML downloader, since Adobe Acrobat by default does
+  not allow attaching most files such as zip archives, but allows attaching
+  HTML files."
   [in file-name]
-  (str "<!doctype html>\n<a href=\"data:application/octet-stream,\n"
+  (str "<!doctype html>\n"
+    "<title>" file-name "</title>\n"
+    "<style>body { font-family: sans-serif; margin: 1em; }</style>"
+    "<p><a href=\"data:application/octet-stream;base64,\n"
     (-> in stream->bytes bytes->base64 (wrap 80))
-    "\n\" download=\"" file-name "\">Download</a>"))
+    "\n\" download=\"" file-name "\">Download</a>\n"
+    "<p><small>This will download a zip archive. Extract it and open the "
+    "contained <strong>index.html</strong> file start browsing.</small>"))
 
 (comment
-  (with-open [f])
-  (io/copy (io/reader (zip-directory "target/static")) (io/writer "target/out.zip"))
-  (spit "target/wrapped.html" (wrapper-html (zip-directory "target/static") "static.zip"))
-  (-> (zip-directory "target/static") stream->bytes bytes->base64 (wrap 80) println)
-  
-  (str/join "\n" (re-seq (re-pattern ".{1,4}") "hello world"))
-  re-seq)
+  (do
+    (.delete (io/file "target/out.zip"))
+    (with-open [in (zip-directory "target/static")
+                out (io/output-stream (io/file "target/out.zip"))]
+      (.transferTo in out))
+    (sh "unzip" "-l" "target/out.zip"))
+  (spit "target/wrapped.html" (wrapper-html (zip-directory "target/static") "static.zip")))
 
 (comment
   (remove-ns 'docpkg.main)
@@ -228,14 +229,8 @@
 
 (defn print-package-code
   "Writes LaTeX code to *out*."
-  [title readme-path messages-path]
+  [title readme-path messages-path static-web-site-path]
   (println (str/replace header-template #"◊title" (escape title)))
-  (print-page-with
-    (println "\\section*{Hyperlink test}")
-    (println "\\href{out.tex}{Example}"))
-  (print-page-with
-    (println "\\section*{Attachments}")
-    (println (attachment "../../test.html" "HTML file")))
   (print-page-with (println "\\section*{Context}"))
   (let [{:keys [exit out error err]} (sh "pandoc" "-f" "markdown" "-t" "latex" readme-path)]
     (assert (= exit 0) (str "assertion failed:" out error err))
@@ -266,6 +261,22 @@
     (println (str "\\includegraphics[width=\\columnwidth]{../hello.pdf}")))
   (print-page-with (println "\\section*{Validation}"))
   (print-page-with (println "\\section*{Implementation blueprint}"))
+  (print-page-with
+    (println "\\section*{Attachments}"))
+  (print-page-with
+    (println "\\section*{Static website}")
+    (let [p "static-website.zip"
+          f "static-website.html"]
+      (spit (str "target/" f)
+        (wrapper-html (zip-directory static-web-site-path) p))
+      (println (attachment (str "../" f) (str "Download " f)))
+      (println)
+      (println "{\\small Only works in some PDF viewers, such as "
+        "\\href{https://get.adobe.com/reader/}{Adobe Acrobat Reader}, "
+        "by double-clicking the link. "
+        "On the command line, you can use "
+        "\\href{https://www.xpdfreader.com}{Xpdf} with "
+        "\\texttt{pdfdetach -saveall <file.pdf>}.}")))
   (println footer-template))
 
 (defn build-package
@@ -274,13 +285,16 @@
   (try
     (do
       (io/make-parents "target/tex/out.tex")
-      (zip-directory "target/static")
       (with-open [r (convert "processes/hello.bpmn"
                       ::business-process-model ::portable-document)]
         (io/copy r (io/file "target/hello.pdf")))
       (with-open [w (io/writer "target/tex/out.tex")]
         (binding [*out* w]
-          (print-package-code (documentation :title) (documentation :readme) (documentation :cucumber-messages))))
+          (print-package-code
+            (documentation :title)
+            (documentation :readme)
+            (documentation :cucumber-messages)
+            (documentation :static-website))))
       (let [{:keys [exit out err]} (sh "lualatex" "out.tex" :dir "target/tex")]
         (assert (= exit 0) (str out \n err))
         nil))

@@ -8,6 +8,6 @@
    :exec-args {:title "Doc Packager"
                :readme "README.md"
                :cucumber-messages "target/cucumber-output"
-               :static-site "target/static"}}
+               :static-website "target/static"}}
   :build {:deps {io.github.clojure/tools.build {:git/tag "v0.8.1" :git/sha "7d40500"}}
           :ns-default build}}}
