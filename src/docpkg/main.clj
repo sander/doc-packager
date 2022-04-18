@@ -314,12 +314,12 @@
 ;; TODO ensure it can be invoked with an input and an output path
 
 (defsteps
-  (Given "a BPMN model"
+  (Given "a BPMN model" []
     (assert (.exists (io/file "processes/hello.bpmn"))))
-  (When "I render it to PDF"
+  (When "I render it to PDF" []
     (io/make-parents "target/test/hello.pdf")
     (with-open [r (convert "processes/hello.bpmn" ::business-process-model
                     ::portable-document)]
       (io/copy r (io/file "target/test/hello.pdf"))))
-  (Then "I have a PDF file"
+  (Then "I have a PDF file" []
     (assert (.exists (io/file "target/test/hello.pdf")))))

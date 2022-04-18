@@ -16,6 +16,7 @@
 (s/def ::example-step (s/cat
                         :keyword #{'Given 'When 'Then}
                         :description string?
+                        :args vector?
                         :body (s/* any?)))
 
 (defmacro defsteps
@@ -27,7 +28,7 @@
          :name ~(str (.getName *ns*) "/StepDefinitions")
          :prefix ~prefix
          :methods ~(->> body (map (partial s/conform ::example-step))
-                     (mapv (fn [{:keys [keyword description]}]
+                     (mapv (fn [{:keys [keyword description args]}]
                             `[~(with-meta
                                  (example-step-description->symbol description)
                                  `{~({'Given 'io.cucumber.java.en.Given
@@ -35,14 +36,15 @@
                                       'Then 'io.cucumber.java.en.Then}
                                      keyword)
                                    ~description})
-                              []
+                              ~(mapv (fn [_] String) args)
                               ~'void]))))
        ~@(map (fn [x]
-                (let [{:keys [description body]} (s/conform ::example-step x)]
+                (let [{:keys [description body args]}
+                      (s/conform ::example-step x)]
                   `(~'defn
                      ~(symbol (str prefix
                                 (example-step-description->symbol description)))
-                     [~'_]
+                     [~'_ ~@args]
                      ~@body)))
            body))))
 
@@ -56,10 +58,10 @@
   (swap! *glossary* assoc id {::name name ::description description}))
 
 (defsteps
-  (Given "an empty glossary"
+  (Given "an empty glossary" []
     (def test-glossary (atom {})))
-  (When "I define a concept"
+  (When "I define a concept" []
     (binding [*glossary* test-glossary]
       (defconcept ::example "foo" "bar")))
-  (Then "the glossary is not empty"
+  (Then "the glossary is not empty" []
     (assert (not (empty? @test-glossary)))))

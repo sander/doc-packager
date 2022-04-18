@@ -4,6 +4,7 @@
     [clojure.java.io :as io]
     [clojure.spec.alpha :as s]
     [clojure.string :as str]
+    [clojure.edn :as edn]
     [cognitect.anomalies :as anom]
     [docpkg.internal :refer [defconcept defsteps]]))
 
@@ -68,12 +69,12 @@
   (binding [*out* *err*] (println "foo"))
   (cli {:foo :bar}))
 
-;; TODO ensure the first Given takes a String arg
-
 (defsteps
-  (Given "a project with feature file"
-    (println "a project"))
-  (When "I run the cli with this manifest"
-    (println "run"))
-  (Then "I get an error message"
-    (println "error")))
+  (Given "manifest" [manifest]
+    (def test-manifest (edn/read-string manifest)))
+  (When "I run the cli with this manifest" []
+    (def test-result
+      (try {:ok (cli test-manifest)}
+        (catch Exception e {:exception e}))))
+  (Then "I get an error message" []
+    (assert (:exception test-result))))
