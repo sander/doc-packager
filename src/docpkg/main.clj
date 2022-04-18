@@ -13,6 +13,10 @@
     [java.nio.file.attribute FileAttribute]
     [java.util Base64]))
 
+(defn testje
+  [args]
+  (println :args args))
+
 (with-test
   (defn- expect-success [{:keys [exit out err]} error-description]
     (when (not= exit 0)

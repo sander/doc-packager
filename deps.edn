@@ -1,6 +1,7 @@
 {:deps {org.clojure/clojure {:mvn/version "1.11.1"}
         org.clojure/data.json {:mvn/version "2.4.0"}
-        io.cucumber/cucumber-java {:mvn/version "7.2.3"}}
+        io.cucumber/cucumber-java {:mvn/version "7.2.3"}
+        com.cognitect/anomalies {:mvn/version "0.1.12"}}
  :paths ["src" "resources" "classes"]
  :aliases
  {:main
@@ -9,5 +10,12 @@
                :readme "README.md"
                :cucumber-messages "target/cucumber-output"
                :static-website "target/static"}}
-  :build {:deps {io.github.clojure/tools.build {:git/tag "v0.8.1" :git/sha "7d40500"}}
-          :ns-default build}}}
+  :docpkg
+  {:exec-fn docpkg.core/cli
+   :exec-args {:title "Docpkg"
+               :introduction {:local/path "README.md"}
+               :specification {:local/path "target/cucumber-output"}
+               :test-report {:local/path "target/static"}}}
+  :build
+  {:deps {io.github.clojure/tools.build {:git/tag "v0.8.1" :git/sha "7d40500"}}
+   :ns-default build}}}
