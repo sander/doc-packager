@@ -4,6 +4,7 @@
     [clojure.java.io :as io]
     [clojure.spec.alpha :as s]
     [clojure.string :as str]
+    [clojure.java.shell :refer [sh]]
     [clojure.edn :as edn]
     [cognitect.anomalies :as anom]
     [docpkg.internal :refer [defconcept defsteps]]))
@@ -29,6 +30,15 @@
   "Package manifest"
   "A complete definition of data and references to documents that should be packaged.")
 
+(defn- print-package-code
+  "Writes LaTeX code to *out*."
+  [manifest]
+  nil)
+
+(defn- fault
+  [& message]
+  {::anom/category ::anom/fault ::anom/message (str message)})
+
 (s/fdef build-package
   :args (s/cat :manifest :package/manifest)
   :ret (s/or :success nil? :anomaly ::anom/anomaly))
@@ -38,7 +48,31 @@
 
   Default target: target/tex/out.pdf"
   [manifest]
-  {::anom/category ::anom/incorrect ::anom/message "Invalid manifest"})
+  (let [lualatex "lualatex"
+        source (io/file "target/tex/out.tex")]
+    (or (try (assert (= 0 (:exit (sh lualatex "--help"))))
+          (catch Exception _ (fault "Could not find " lualatex " executable")))
+        (try (io/make-parents source)
+             (with-open [w (io/writer source)]
+               (binding [*out* w]
+                 (print-package-code manifest)))
+          (catch Exception e (fault "Could not write code: " (.getMessage e)))))))
+          ; (let [{:keys [name parent]} (bean source)
+          ;       {:keys [exit out err]} (sh "lualatexx" name :dir parent)]
+          ;   (if (= exit 0)
+          ;     nil
+          ;     {::anom/category ::anom/fault
+          ;      ::anom/message "Error while generating PDF"
+          ;      :lualatex/output out
+          ;      :lualatex/error err})))))
+  
+
+(comment
+  (sh "lualatex" "--help")
+  (-> "deps.edn" slurp edn/read-string (get-in [:aliases :docpkg :exec-args]) build-package)
+  (require 'clojure.java.javadoc)
+  (clojure.java.javadoc/javadoc java.io.File)
+  (bean (io/file "target/text/out.tex")))
 
 (defn- anomaly?
   [x]
