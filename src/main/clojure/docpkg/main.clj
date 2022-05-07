@@ -278,8 +278,10 @@
       (println (attachment (str "../" f) (str "Download " f)))
       (println)
       (println "{\\small Only works in some PDF viewers, such as "
-        "\\href{https://get.adobe.com/reader/}{Adobe Acrobat Reader}, "
-        "by double-clicking the link. "
+        "\\href{https://get.adobe.com/reader/}{Adobe Acrobat Reader} and "
+        "\\href{https://www.mozilla.org/firefox/new/}{Firefox} on desktop "
+        "by double-clicking the link, or "
+        "\\href{https://pdfviewer.io/pro/}{PDF Viewer Pro} on mobile."
         "On the command line, you can use "
         "\\href{https://www.xpdfreader.com}{Xpdf} with "
         "\\texttt{pdfdetach -saveall <file.pdf>}.}"))
