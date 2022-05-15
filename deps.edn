@@ -1,7 +1,9 @@
 {:deps {org.clojure/clojure {:mvn/version "1.11.1"}
         org.clojure/data.json {:mvn/version "2.4.0"}
         io.cucumber/cucumber-java {:mvn/version "7.2.3"}
-        com.cognitect/anomalies {:mvn/version "0.1.12"}}
+        com.cognitect/anomalies {:mvn/version "0.1.12"}
+        clj-http/clj-http {:mvn/version "3.12.3"}
+        cheshire/cheshire {:mvn/version "5.10.2"}}
  :paths ["src/main/clojure" "src/main/resources"]
  :aliases
  {:main
