@@ -16,15 +16,17 @@ class MainSpec extends AnyFunSpec:
       it("traverses") {
         val result = d.traverse()
         println(result)
-        assert(result.toList.length == 4)
         assert(
           result == ListMap(
-            List.empty -> List.empty,
-            List("subfolder") -> List("extra.csv"),
-            ("foo.html" :: "subfolder" :: List.empty) -> List.empty,
-            List("file2.html") -> List.empty
+            Nil -> List.empty,
+            ("subfolder" :: Nil) -> List("extra.csv"),
+            ("foo.html" :: "subfolder" :: Nil) -> List.empty,
+            ("file2.html" :: Nil) -> List.empty
           )
         )
       }
+    }
+    it("test") {
+      println(d.getPageContent(Main.Path(List.empty)))
     }
   }

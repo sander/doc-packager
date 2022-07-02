@@ -6,14 +6,19 @@ import sttp.client3.okhttp.OkHttpSyncBackend
 import sttp.monad.syntax.*
 import io.circe.generic.auto.*
 import io.circe.*
+import io.circe.Decoder.Result
 import io.circe.syntax.*
 import nl.sanderdijkhuis.docpkg.Confluence.Space.Property.Key
-import nl.sanderdijkhuis.docpkg.Main.Content.{Id, Version}
+import nl.sanderdijkhuis.docpkg.Main.Content.Version
+import sttp.model.Uri
 
 import java.io.File
 import java.net.URI
+import java.net.URL
 import java.util.{Base64, UUID}
+import scala.annotation.tailrec
 import scala.collection.immutable.ListMap
+import scala.io.Source
 
 object Main:
 
@@ -23,6 +28,12 @@ object Main:
 
   case class Content(title: Content.Title, body: Content.Body)
 
+  object Name:
+    def apply(p: String): Name = p
+
+  object Path:
+    def apply(p: List[Name]): Path = p
+
   object Content:
     opaque type Id = String
     opaque type Title = String
@@ -30,6 +41,15 @@ object Main:
     opaque type Version = Int
 
     extension (v: Version) def increment: Version = v + 1
+    extension (t: Title) def toString: String = t
+    extension (b: Body) def value: String = b
+
+    def parse(title: String, body: String): Option[Content] = Some(
+      Content(title, body)
+    )
+
+    object Id:
+      def parse(value: String): Option[Id] = Some(value)
 
   trait LocalDirectory:
     def traverse(): LocalDirectory.BreadthFirstTraversal
@@ -43,21 +63,70 @@ object Main:
       def hasAttachment(path: Path, name: Name): Boolean =
         l.get(path).map(_.collectFirst(_ == name)).nonEmpty
 
-    def apply(path: URI): Either[String, LocalDirectory] =
-      val d = File(path)
+    def apply(rootPath: URI): Either[String, LocalDirectory] =
+      val d = File(rootPath)
+      val pageSuffix = ".html"
+      val mainPageName = s"index$pageSuffix"
       if (!d.isDirectory) Left("No directory")
       else
         Right(
           new LocalDirectory {
-            override def traverse(): BreadthFirstTraversal =
-              ListMap.from[Path, List[Name]](
-                for f <- d.listFiles().toList
-                yield (List[Name](f.getName) -> List.empty[Name])
+            override def traverse(): BreadthFirstTraversal = {
+              def traverse(
+                  path: Path,
+                  directory: File
+              ): ListMap[Path, List[Name]] =
+                val root: ListMap[Path, List[Name]] = ListMap(path -> (for
+                  f <- directory.listFiles().toList
+                  if !f.isDirectory && !f.getName.endsWith(pageSuffix)
+                yield f.getName))
+                val directories = ListMap.from(for
+                  f <- directory.listFiles().toList if f.isDirectory
+                  n = f.getName :: path
+                  e <- traverse(n, f)
+                yield e)
+                val pages = ListMap.from(for
+                  f <- directory.listFiles().toList
+                  if !f.isDirectory && f.getName.endsWith(
+                    pageSuffix
+                  ) && (f.getName != mainPageName)
+                yield (f.getName :: path) -> Nil)
+                root ++ directories ++ pages
+              traverse(Nil, d)
+            }
+
+            override def getPageContent(path: Path): Content =
+              val p = URI(rootPath.toString + "/" + path.reverse.mkString("/"))
+              val title = path match {
+                case Nil => "root page"
+                case p   => p.mkString("-")
+              }
+              File(p) match {
+                case f if f.isDirectory =>
+                  val x = f.listFiles().find(_.getName == mainPageName)
+                  x match {
+                    case Some(x) =>
+                      val s = Source.fromFile(x)
+                      val c = s.getLines().mkString
+                      s.close()
+                      Content.parse(title, c).get
+                    case None =>
+                      Content.parse(title, "no content").get
+                  }
+                case f if !f.isDirectory =>
+                  val s = Source.fromFile(f)
+                  val c = s.getLines().mkString
+                  s.close()
+                  Content.parse(title, c).get
+              }
+
+            override def getAttachment(path: Path, name: Name): Attachment =
+              val p = URI(
+                rootPath.toString + "/" + path.reverse.mkString(
+                  "/"
+                ) + "/" + name
               )
-
-            override def getPageContent(path: Path): Content = ???
-
-            override def getAttachment(path: Path, name: Name): Attachment = ???
+              File(p)
           }
         )
 
@@ -84,18 +153,21 @@ object Main:
     def appendTo(
         pageId: Content.Id,
         targetId: Content.Id
-    ): Unit // PUT /wiki/rest/api/content/{pageId}/move/{position}/{targetId}
+    ): Unit
 
   object RemoteSpace:
     private val prefix = "docpkg"
 
-    case class RemoteContent(id: Content.Id, attachments: List[Name])
+    case class RemoteContent(
+        id: Content.Id,
+        attachments: Map[Name, Content.Id]
+    )
 
     type Inventory = Map[Path, RemoteContent]
 
     extension (r: Inventory)
       def hasAttachment(path: Path, name: Name): Boolean =
-        r.get(path).map(_.attachments.collectFirst(_ == name)).nonEmpty
+        r.get(path).map(_.attachments.keys.collectFirst(_ == name)).nonEmpty
 
     case class UpdatablePageContent(
         version: Content.Version,
@@ -120,7 +192,12 @@ object Main:
 
             val mutexKey: Confluence.Space.Property.Key =
               Confluence.Space.Property.Key
-                .parse(s"$prefix.mutex")
+                .parse(s"${prefix}_mutex")
+                .getOrElse(throw new Exception("Could not parse key"))
+
+            val pathKey: Confluence.Space.Property.Key =
+              Confluence.Space.Property.Key
+                .parse(s"${prefix}_path")
                 .getOrElse(throw new Exception("Could not parse key"))
 
             override def acquireMutex(): Unit =
@@ -154,31 +231,66 @@ object Main:
               .body
               .getOrElse(throw new Exception("Could not release mutex"))
 
-            override def list(): Inventory = Map.empty
+            override def list(): Inventory =
+              val request = Confluence.Content.get(pathKey)
+              @tailrec def get(
+                  req: Confluence.Request[
+                    Confluence.Content.GetContentResponse
+                  ],
+                  i: Inventory
+              ): Inventory =
+                val r: Confluence.Content.GetContentResponse = req
+                  .send(backend)
+                  .body
+                  .getOrElse(throw new Exception("Could not release mutex"))
+                r.next match {
+                  case None    => i ++ r.inventory
+                  case Some(n) => get(n, i ++ r.inventory)
+                }
 
-            override def create(path: Path, content: Content): Id = ???
+              get(request, Map.empty)
+
+            override def create(path: Path, content: Content): Main.Content.Id =
+              val id = Confluence.Content
+                .createPage(content.title, sk, content.body)
+                .send(backend)
+                .body
+                .getOrElse(throw new Exception("Could not create page"))
+              Confluence.Content
+                .createProperty(id, pathKey, path.map(_.toString))
+                .send(backend)
+              id
 
             override def upload(
-                contentId: Id,
+                contentId: Main.Content.Id,
                 name: Name,
                 attachment: Attachment
+            ): Unit = Confluence.Content
+              .attach(contentId, name, attachment)
+              .send(backend)
+
+            override def deletePage(contentId: Main.Content.Id): Unit = ???
+
+            override def deleteAttachment(
+                contentId: Main.Content.Id,
+                name: Name
             ): Unit = ???
 
-            override def deletePage(contentId: Id): Unit = ???
-
-            override def deleteAttachment(contentId: Id, name: Name): Unit = ???
-
             override def getUpdatablePageContent(
-                contentId: Id
+                contentId: Main.Content.Id
             ): UpdatablePageContent = ???
 
             override def updatePageContent(
-                contentId: Id,
+                contentId: Main.Content.Id,
                 version: Version,
                 content: Content
             ): Unit = ???
 
-            override def appendTo(pageId: Id, targetId: Id): Unit = ???
+            override def appendTo(
+                pageId: Main.Content.Id,
+                targetId: Main.Content.Id
+            ): Unit =
+              Confluence.Content.appendTo(pageId, targetId).send(backend)
           })
       }
 
@@ -226,7 +338,7 @@ object Main:
       (p, n)
     val deletedAttachments = for
       (p, c) <- target.toList
-      n <- c.attachments if !source.hasAttachment(p, n)
+      (n, _) <- c.attachments if !source.hasAttachment(p, n)
     yield
       remote.deleteAttachment(target(p).id, n)
       (p, n)
@@ -336,6 +448,8 @@ object Confluence:
     object Key:
       def parse(value: String): Option[Key] = Some(value)
 
+    extension (k: Key) def toString: String = k
+
     object Property:
       opaque type Key = String
 
@@ -379,6 +493,179 @@ object Confluence:
       request
         .delete(uri"$prefix/space/$key/property/$propertyKey")
         .response(ignore.map(_ => Right(())))
+
+  object Content:
+
+    def createPage(
+        title: Main.Content.Title,
+        space: Space.Key,
+        content: Main.Content.Body
+    ): Request[Main.Content.Id] =
+      request
+        .post(uri"$prefix/content")
+        .body(
+          Json.obj(
+            "title" -> Json.fromString(title.toString),
+            "type" -> Json.fromString("page"),
+            "space" -> Json.obj("key" -> Json.fromString(space.toString)),
+            "body" -> Json.obj(
+              "storage" -> Json.obj(
+                "representation" -> Json.fromString("storage"),
+                "value" -> Json.fromString(content.value)
+              )
+            )
+          )
+        )
+        .response(
+          asJson[Json].getRight.map(r =>
+            r.hcursor
+              .downField("id")
+              .as[String]
+              .map(_.asInstanceOf[Main.Content.Id])
+          )
+        )
+
+    def attach(
+        id: Main.Content.Id,
+        name: Main.Name,
+        attachment: Main.Attachment
+    ): Request[Unit] =
+      request
+        .multipartBody(
+          multipartFile("file", attachment.asInstanceOf[File])
+            .fileName(name.asInstanceOf[String]),
+          multipart("comment", Configuration.comment)
+        )
+        .put(uri"$prefix/content/$id/child/attachment")
+        .response(asString.getRight.map(_ => Right(())))
+
+    def appendTo(id: Main.Content.Id, target: Main.Content.Id): Request[Unit] =
+      request
+        .put(uri"$prefix/content/$id/move/append/$target")
+        .response(asString.getRight.map(_ => Right(())))
+
+    def createProperty(
+        id: Main.Content.Id,
+        key: Space.Property.Key,
+        value: List[String]
+    ): Request[Unit] = request
+      .post(uri"$prefix/content/$id/property")
+      .body(
+        Json.obj(
+          "key" -> Json.fromString(key.toString),
+          "value" -> Json.arr(value.map(v => Json.fromString(v)): _*)
+        )
+      )
+      .response(asString.getRight.map(_ => Right(())))
+
+    case class GetContentResponse(
+        next: Option[Request[GetContentResponse]],
+        inventory: Main.RemoteSpace.Inventory,
+        start: Int,
+        limit: Int,
+        size: Int
+    )
+
+    def get(
+        propertyKey: Space.Property.Key,
+        offset: Int = 0
+    ): Request[GetContentResponse] =
+      val lim = 50
+      val decodeItem
+          : Decoder[Option[(Main.Path, Main.RemoteSpace.RemoteContent)]] =
+        Decoder.instance(a =>
+          for {
+            id <- a.downField("id").as[String]
+            path <- a
+              .downField("metadata")
+              .downField("properties")
+              .downField(propertyKey.toString)
+              .downField("value")
+              .as[Option[Array[String]]]
+            attachments <- a
+              .downField("children")
+              .downField("attachment")
+              .downField("results")
+              .as[Option[List[(String, String)]]](
+                Decoder.decodeOption(
+                  Decoder.decodeList(
+                    for {
+                      id <- Decoder[String].prepare(_.downField("id"))
+                      name <- Decoder[String].prepare(_.downField("title"))
+                    } yield (id, name)
+                  )
+                )
+              )
+          } yield path match {
+            case Some(path) =>
+              Some(
+                (
+                  Main.Path(path.toList.map(s => Main.Name(s))),
+                  Main.RemoteSpace
+                    .RemoteContent(
+                      Main.Content.Id.parse(id).get,
+                      Map.from(attachments.getOrElse(List.empty).map {
+                        case (id, name) =>
+                          Main.Name(name) -> Main.Content.Id.parse(id).get
+                      })
+                    )
+                )
+              )
+            case None => None
+          }
+        )
+      val decodeItems
+          : Decoder[List[(Main.Path, Main.RemoteSpace.RemoteContent)]] =
+        Decoder
+          .decodeList[Option[(Main.Path, Main.RemoteSpace.RemoteContent)]](
+            decodeItem
+          )
+          .map(_.flatMap(_.toList))
+      request
+        .get(
+          uri"$prefix/content?limit=$lim&start=$offset&type=page&expand=metadata.properties.$propertyKey,children.attachment"
+        )
+        .response(
+          asJson[Json].getRight
+            .map(j =>
+              for {
+                start <- j.hcursor.downField("start").as[Int]
+                size <- j.hcursor.downField("size").as[Int]
+                limit <- j.hcursor.downField("limit").as[Int]
+                next <- j.hcursor
+                  .downField("_links")
+                  .downField("next")
+                  .as[Option[String]]
+                inv <- j.hcursor
+                  .downField("results")
+                  .as[List[(Main.Path, Main.RemoteSpace.RemoteContent)]](
+                    decodeItems
+                  )
+              } yield GetContentResponse(
+                next.map(_ => get(propertyKey, offset + limit)),
+                Map.from(inv),
+                start,
+                size,
+                limit
+              )
+            )
+        )
+
+    // def updateSpaceProperty(
+//        key: Key,
+//        propertyKey: Property.Key,
+//        value: String
+//    ): Request[Unit] =
+//      request
+//        .post(uri"$prefix/space/$key/property")
+//        .body(
+//          Json
+//            .obj(
+//              "key" -> Json.fromString(propertyKey.toString),
+//              "value" -> Json.fromString(value)
+//            )
+//        )
+//        .response(asJson[Json].getRight.map(_.hcursor.as[Unit]))
 
 //object Content2:
 //  opaque type Id = String
@@ -466,8 +753,9 @@ object Confluence:
     }
 
   Main.resetMutex()
+//  println(summon[Main.RemoteSpace].list())
   println(Main.syncProcess())
-//  given Content.Token = Content.Token("ieFA1qc81iPPK2rFJzxe02B9")
+
 // val c = Confluence(token)
 //  val backend = OkHttpSyncBackend()
 // println(c.attachmentRequest(File("build.sbt")).send(backend))
