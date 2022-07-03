@@ -9,12 +9,14 @@ import io.circe.*
 import io.circe.Decoder.Result
 import io.circe.syntax.*
 import nl.sanderdijkhuis.docpkg.Confluence.Space.Property.Key
-import nl.sanderdijkhuis.docpkg.Main.Content.Version
+import nl.sanderdijkhuis.docpkg.Main.Content.{Id, Version}
+import nl.sanderdijkhuis.docpkg.Main.RemoteSpace.UpdatablePageContent
 import sttp.model.Uri
 
 import java.io.File
 import java.net.URI
 import java.net.URL
+import java.nio.file.Files
 import java.util.{Base64, UUID}
 import scala.annotation.tailrec
 import scala.collection.immutable.ListMap
@@ -40,9 +42,13 @@ object Main:
     opaque type Body = String
     opaque type Version = Int
 
-    extension (v: Version) def increment: Version = v + 1
+    extension (v: Version)
+      def increment: Version = v + 1
+      def value: Int = v
     extension (t: Title) def toString: String = t
     extension (b: Body) def value: String = b
+
+    def Version(value: Int): Version = value
 
     def parse(title: String, body: String): Option[Content] = Some(
       Content(title, body)
@@ -145,6 +151,10 @@ object Main:
     def getUpdatablePageContent(
         contentId: Content.Id
     ): RemoteSpace.UpdatablePageContent
+    def getUpdatableAttachmentContent(
+        contentId: Content.Id,
+        attachmentId: Confluence.Content.AttachmentId
+    ): RemoteSpace.UpdatableAttachmentContent
     def updatePageContent(
         contentId: Content.Id,
         version: Content.Version,
@@ -156,11 +166,12 @@ object Main:
     ): Unit
 
   object RemoteSpace:
-    private val prefix = "docpkg"
+    private val prefix =
+      "docpkg" // TODO enable namespacing, to have multiple docpkg trees in 1 space
 
     case class RemoteContent(
         id: Content.Id,
-        attachments: Map[Name, Content.Id]
+        attachments: Map[Name, Confluence.Content.AttachmentId]
     )
 
     type Inventory = Map[Path, RemoteContent]
@@ -173,6 +184,12 @@ object Main:
         version: Content.Version,
         content: Content
     )
+
+    case class UpdatableAttachmentContent(content: Array[Byte]) {
+      def contentEquals(file: File): Boolean =
+        val ba = Files.readAllBytes(file.toPath)
+        (ba diff content).isEmpty
+    }
 
 //    case class Live() extends RemoteSpace
 
@@ -278,13 +295,30 @@ object Main:
 
             override def getUpdatablePageContent(
                 contentId: Main.Content.Id
-            ): UpdatablePageContent = ???
+            ): UpdatablePageContent = Confluence.Content
+              .getContentForUpdate(contentId)
+              .send(backend)
+              .body
+              .getOrElse(throw new Exception("Could not get content"))
+
+            override def getUpdatableAttachmentContent(
+                contentId: Id,
+                attachmentId: Confluence.Content.AttachmentId
+            ): UpdatableAttachmentContent =
+              val att: Array[Byte] = Confluence.Content
+                .getAttachment(contentId, attachmentId)
+                .send(backend)
+                .body
+                .getOrElse(throw new Exception("Could not get attachment"))
+              UpdatableAttachmentContent(att)
 
             override def updatePageContent(
                 contentId: Main.Content.Id,
                 version: Version,
                 content: Content
-            ): Unit = ???
+            ): Unit = Confluence.Content
+              .updatePage(contentId, version, content)
+              .send(backend)
 
             override def appendTo(
                 pageId: Main.Content.Id,
@@ -360,11 +394,16 @@ object Main:
         localContent
       )
       p
-    val updatedAttachments = for
+    val updatedAttachments = for // TODO check if it really works
       (p, ns) <- source.toList
       n <- ns if target.hasAttachment(p, n)
+      a = local.getAttachment(p, n)
+      b = remote.getUpdatableAttachmentContent(
+        target(p).id,
+        target(p).attachments(n)
+      )
+      if (!b.contentEquals(a))
     yield
-      val a = local.getAttachment(p, n)
       remote.upload(target(p).id, n, a)
       (p, n)
     val repositionedPages = for p <- source.keys.toList if p.nonEmpty
@@ -496,6 +535,10 @@ object Confluence:
 
   object Content:
 
+    opaque type AttachmentId = String
+
+    def AttachmentId(value: String): AttachmentId = value
+
     def createPage(
         title: Main.Content.Title,
         space: Space.Key,
@@ -606,7 +649,7 @@ object Confluence:
                       Main.Content.Id.parse(id).get,
                       Map.from(attachments.getOrElse(List.empty).map {
                         case (id, name) =>
-                          Main.Name(name) -> Main.Content.Id.parse(id).get
+                          Main.Name(name) -> Confluence.Content.AttachmentId(id)
                       })
                     )
                 )
@@ -650,6 +693,67 @@ object Confluence:
               )
             )
         )
+
+    def getContentForUpdate(
+        id: Main.Content.Id
+    ): Request[UpdatablePageContent] =
+      request
+        .get(uri"$prefix/content/$id?expand=version,body.storage&trigger=")
+        .response(
+          asJson[Json].getRight.map(j =>
+            for {
+              title <- j.hcursor.downField("title").as[String]
+              version <- j.hcursor
+                .downField("version")
+                .downField("number")
+                .as[Int]
+              body <- j.hcursor
+                .downField("body")
+                .downField("storage")
+                .downField("value")
+                .as[String]
+              c = Main.Content.parse(title, body).get
+            } yield UpdatablePageContent(
+              Main.Content.Version(version),
+              c
+            )
+          )
+        )
+
+    def getAttachment(
+        contentId: Main.Content.Id,
+        attachmentId: AttachmentId
+    ): Request[Array[Byte]] = request
+      .get(
+        uri"$prefix/content/$contentId/child/attachment/$attachmentId/download"
+      )
+      .followRedirects(true)
+      .response(asByteArray.map {
+        case Left(e)  => Left(DecodingFailure(e, List.empty))
+        case Right(r) => Right(r)
+      })
+
+    def updatePage(
+        id: Main.Content.Id,
+        version: Main.Content.Version,
+        content: Main.Content
+    ): Request[Unit] =
+      request
+        .put(uri"$prefix/content/$id")
+        .body(
+          Json.obj(
+            "title" -> Json.fromString(content.title.toString),
+            "type" -> Json.fromString("page"),
+            "version" -> Json.obj("number" -> Json.fromInt(version.value)),
+            "body" -> Json.obj(
+              "storage" -> Json.obj(
+                "representation" -> Json.fromString("storage"),
+                "value" -> Json.fromString(content.body.toString)
+              )
+            )
+          )
+        )
+        .response(asString.getRight.map(_ => Right(())))
 
     // def updateSpaceProperty(
 //        key: Key,
@@ -733,7 +837,7 @@ object Confluence:
 
 @main def run(): Unit =
   given Confluence.Token = Confluence.Token(
-    "",
+    "shkpoKEN8HizzReZCoq39532",
     Configuration.domainName,
     Configuration.userName
   )
