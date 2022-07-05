@@ -22,6 +22,9 @@ import scala.annotation.tailrec
 import scala.collection.immutable.ListMap
 import scala.io.Source
 
+// TODO in initial inventory, check all existing page names also outside of our namespace; then plan for naming pages optionally with (2) etc.
+// TODO in local traversal, keep track of [[File]]s and flatten attachment hierarchies
+// TODO get rid of classes? could use context functions for any required data
 object Main:
 
   opaque type Name = String
@@ -434,29 +437,6 @@ object Configuration:
 //  val contentId = Content.Id("2555905") // Edited page
   val comment = "comment"
 
-// object Confluence:
-//   case class Request`
-//   def request(apiToken: String): RequestT[Empty, Either[String, String], Any] =
-//     basicRequest
-//       .header("Authorization", s"Basic ${Base64.getEncoder.encodeToString(
-//         s"${Configuration.userName}:${apiToken}".getBytes
-//       )}")
-
-//case class Version(number: Int)
-//case class GetContentResponse(
-//    version: Version,
-//    title: String,
-//    body: ContentBody
-//)
-//case class ContentBody(storage: ContentBodyStorage)
-//case class ContentBodyStorage(value: String, representation: String)
-//case class UpdateContentRequest(
-//    version: Version,
-//    `type`: String,
-//    title: String,
-//    body: ContentBody
-//)
-
 /** See [Confluence REST
   * API](https://developer.atlassian.com/cloud/confluence/rest/intro/)
   */
@@ -755,92 +735,13 @@ object Confluence:
         )
         .response(asString.getRight.map(_ => Right(())))
 
-    // def updateSpaceProperty(
-//        key: Key,
-//        propertyKey: Property.Key,
-//        value: String
-//    ): Request[Unit] =
-//      request
-//        .post(uri"$prefix/space/$key/property")
-//        .body(
-//          Json
-//            .obj(
-//              "key" -> Json.fromString(propertyKey.toString),
-//              "value" -> Json.fromString(value)
-//            )
-//        )
-//        .response(asJson[Json].getRight.map(_.hcursor.as[Unit]))
-
-//object Content2:
-//  opaque type Id = String
-//  opaque type Version = Int
-//  opaque type Title = String
-//  opaque type StorageBody = String
-//  opaque type UpdateError = String
-//
-//  opaque type Token = String
-//
-//  type Request[T] =
-//    Token ?=> RequestT[Identity, Either[DecodingFailure, T], Any]
-//
-//  def Id(s: String): Id = s
-//  def Token(s: String): Token = s
-//  extension (v: Version) def increment: Version = v + 1
-//
-//  private val prefix =
-//    s"https://${Configuration.domainName}/wiki/rest/api/content"
-//
-
-//
-//  def getVersionRequest(id: Id): Request[Version] =
-//    request
-//      .get(uri"$prefix/$id?expand=version&trigger=")
-//      .response(
-//        asJson[Json].getRight
-//          .map(_.hcursor.downField("version").downField("number").as[Version])
-//      )
-
-// case class Confluence(apiToken: String):
-//   private val request = basicRequest
-//     .header("Authorization", s"Basic ${Base64.getEncoder.encodeToString(
-//       s"${Configuration.userName}:${apiToken}".getBytes
-//     )}")
-
-//   def attachmentRequest(file: File): RequestT[Identity, Unit, Any] =
-//     request
-//       .multipartBody(
-//         multipartFile("file", file).fileName(file.getName),
-//         multipart("comment", Configuration.comment)
-//       )
-//       .put(uri"https://${Configuration.domainName}/${List(
-//         "wiki", "rest", "api", "content",
-//         Configuration.contentId, "child", "attachment"
-//       )}")
-//       .response(asString.getRight.map(_ => ()))
-
-//   def getContentRequest(id: String) =
-//     request
-//       .get(uri"https://${Configuration.domainName}/wiki/rest/api/content/${id}?expand=version,body.storage&trigger=")
-//       .response(asJson[GetContentResponse])
-
-//   def updateContentRequest(id: String, version: Int, title: String, content: String) =
-//     request
-//       .put(uri"https://${Configuration.domainName}/wiki/rest/api/content/${id}")
-//       .body(UpdateContentRequest(Version(version), "page", title, ContentBody(ContentBodyStorage(content, "storage"))).asJson)
-//       .response(asString.getRight.map(_ => ()))
-
-//   def update2(request: UpdateContentRequest) =
-//     request
-//       .put(uri"https://${Configuration.domainName}/wiki/rest/api/content/${id}")
-//       .body(request)
-//       .response(asString.getRight.map(_ => ()))
-
 @main def run(): Unit =
-  given Confluence.Token = Confluence.Token(
-    "shkpoKEN8HizzReZCoq39532",
-    Configuration.domainName,
-    Configuration.userName
-  )
+  val apiTokenName = "ATLASSIAN_API_TOKEN"
+  given Confluence.Token = sys.env
+    .get(apiTokenName)
+    .map(Confluence.Token(_, Configuration.domainName, Configuration.userName))
+    .toRight(s"Error: $apiTokenName not set")
+    .fold(sys.error, identity)
   given SttpBackend[Identity, Any] = OkHttpSyncBackend()
   given Main.RemoteSpace = Main.RemoteSpace(
     Configuration.domainName,
@@ -859,17 +760,3 @@ object Confluence:
   Main.resetMutex()
 //  println(summon[Main.RemoteSpace].list())
   println(Main.syncProcess())
-
-// val c = Confluence(token)
-//  val backend = OkHttpSyncBackend()
-// println(c.attachmentRequest(File("build.sbt")).send(backend))
-// val response = c.getContentRequest(Configuration.contentId).send(backend).body.getOrElse(throw new Exception("no body"))
-// val r = UpdateContentRequest(Version(response.version.number + 1), "page", title, ContentBody(ContentBodyStorage(content, "storage"))
-// println(c.updateContentRequest(Configuration.contentId, response.version.number + 1, response.title, "bar").send(backend))
-//  println(
-//    Content
-//      .getVersionRequest(Configuration.contentId)
-//      .send(backend)
-//      .body
-//      .map(_.increment)
-//  )
