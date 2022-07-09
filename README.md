@@ -7,3 +7,7 @@
 ## How to use it
 
 Build this project using [sbt](https://www.scala-sbt.org). Run `sbt tasks` to get an overview of possible tasks.
+
+## Maintenance guide
+
+The [scripts](scripts/) directory contains several self-documenting scripts. They can be run using [Scala CLI](https://scala-cli.virtuslab.org).

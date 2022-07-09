@@ -1,24 +1,19 @@
 name: Test
-
 on:
   push:
-    branches: [ main ]
+    branches: [main]
   pull_request:
-    branches: [ main ]
-
+    branches: [main]
 permissions:
   contents: read
-
 jobs:
   test:
-
     runs-on: ubuntu-latest
-
     steps:
-    - uses: actions/checkout@v3
-    - uses: actions/setup-java@v3
-      with:
-        java-version: "17"
-        distribution: temurin
-        cache: sbt
-    - run: sbt test
+      - uses: actions/checkout@2541b1294d2704b0964813337f33b291d3f8596b # ratchet:actions/checkout@v3
+      - uses: actions/setup-java@16cca5479d7c6b6843f6a6515640ba33c6501543 # ratchet:actions/setup-java@v3
+        with:
+          java-version: "17"
+          distribution: temurin
+          cache: sbt
+      - run: sbt test

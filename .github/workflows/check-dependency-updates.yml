@@ -1,19 +1,14 @@
 name: Check dependency updates
-
 on:
   schedule:
     - cron: "0 0 * * *" # every day at 00:00
   workflow_dispatch:
-
 permissions:
   contents: read
-
 jobs:
   scala-steward:
-
     runs-on: ubuntu-latest
-
     steps:
-    - uses: scala-steward-org/scala-steward-action@v2
-      with:
-        github-token: ${{ secrets.REPO_GITHUB_TOKEN }}
+      - uses: scala-steward-org/scala-steward-action@6437c4b9167d16f81deef471dd4c69451edfda2e # ratchet:scala-steward-org/scala-steward-action@v2
+        with:
+          github-token: ${{ secrets.REPO_GITHUB_TOKEN }}

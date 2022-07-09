@@ -1,0 +1,18 @@
+name: Check workflow pinning
+on:
+  push:
+    branches: [main]
+  pull_request:
+    branches: [main]
+permissions:
+  contents: read
+jobs:
+  ratchet:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: VirtusLab/scala-cli-setup@313e80b1b8fec6ecb9c058aad0b9f02b4410caa7 # ratchet:VirtusLab/scala-cli-setup@main
+        with:
+          jvm: temurin:1.17.0.3
+          apps: scala-cli
+      - uses: ./scripts/install-ratchet.sc
+      - uses: ./scripts/check-workflow-dependencies.sc
