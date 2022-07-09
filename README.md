@@ -2,7 +2,7 @@
 
 ## Context
 
-**Doc Packager** enables product developers to package evergreen and living documentation together in human-readable packages, so that they can collaborate with stakeholders on complex systems.
+**Doc Packager** enables product developers to combine evergreen and living documentation into human-readable packages, in order to collaborate effectively with stakeholders on complex systems.
 
 ## How to use it
 
