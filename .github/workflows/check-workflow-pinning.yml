@@ -14,5 +14,6 @@ jobs:
         with:
           jvm: temurin:1.17.0.3
           apps: scala-cli
+      - uses: coursier/cache-action@0cdf229a86211e64f9a576ee6c00cdf662f2554d # ratchet:coursier/cache-action@v6
       - run: ./scripts/install-ratchet.sc
       - run: ./scripts/check-workflow-dependencies.sc
