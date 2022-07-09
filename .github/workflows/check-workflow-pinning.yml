@@ -14,5 +14,5 @@ jobs:
         with:
           jvm: temurin:1.17.0.3
           apps: scala-cli
-      - uses: ./scripts/install-ratchet.sc
-      - uses: ./scripts/check-workflow-dependencies.sc
+      - run: ./scripts/install-ratchet.sc
+      - run: ./scripts/check-workflow-dependencies.sc
