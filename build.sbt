@@ -12,8 +12,9 @@ githubTokenSource := TokenSource.GitConfig("github.token") || TokenSource
   .Environment("PACKAGE_GITHUB_TOKEN")
 
 libraryDependencies ++= Seq(
-  "junit" % "junit" % "4.13.2" % Test,
   "com.github.sbt" % "junit-interface" % "0.13.3" % Test,
   "io.cucumber" %% "cucumber-scala" % "8.5.1" % Test,
-  "io.cucumber" % "cucumber-junit" % "7.4.1" % Test
+  "io.cucumber" % "cucumber-junit" % "7.4.1" % Test,
+  "junit" % "junit" % "4.13.2" % Test,
+  "org.scalameta" %% "munit" % "0.7.29" % Test
 )
