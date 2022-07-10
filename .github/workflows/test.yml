@@ -17,3 +17,5 @@ jobs:
           distribution: temurin
           cache: sbt
       - run: sbt test
+        env:
+          PACKAGE_GITHUB_TOKEN: ${{ secrets.PACKAGE_GITHUB_TOKEN }}
