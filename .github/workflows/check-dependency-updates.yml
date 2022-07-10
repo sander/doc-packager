@@ -12,3 +12,5 @@ jobs:
       - uses: scala-steward-org/scala-steward-action@6437c4b9167d16f81deef471dd4c69451edfda2e # ratchet:scala-steward-org/scala-steward-action@v2
         with:
           github-token: ${{ secrets.REPO_GITHUB_TOKEN }}
+        env:
+          PACKAGE_GITHUB_TOKEN: ${{ secrets.PACKAGE_GITHUB_TOKEN }}
