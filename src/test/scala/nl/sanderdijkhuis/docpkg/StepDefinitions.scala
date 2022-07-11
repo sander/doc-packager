@@ -3,6 +3,7 @@ package nl.sanderdijkhuis.docpkg
 import io.cucumber.datatable.DataTable
 import io.cucumber.scala.{EN, PendingException, ScalaDsl, Scenario}
 import io.cucumber.scala.Implicits.*
+import nl.sanderdijkhuis.docpkg.LocalPageInventory.BreadthFirstTraversal
 
 import java.io.File
 import java.nio.file.{Files, Path, Paths}
@@ -12,6 +13,7 @@ class StepDefinitions extends ScalaDsl with EN:
   val directory: Path =
     Files.createTempDirectory(Paths.get("target"), getClass.getName)
   var success: Boolean = false
+  var traversal: Option[BreadthFirstTraversal] = None
 
   Before {
     directory.toFile.mkdirs()
@@ -41,7 +43,7 @@ class StepDefinitions extends ScalaDsl with EN:
       assert(f.createNewFile())
   }
   When("""I generate a local inventory""") { () =>
-    throw PendingException()
+    traversal = LocalPageInventory(directory).toOption
   }
   Then("""the inventory contains the following pages:""") {
     (dataTable: DataTable) =>
