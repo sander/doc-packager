@@ -23,3 +23,7 @@ Feature: Local inventory
       | Inventory path | Attachment name | File path            |
       | /dir1/         | image.png       | /dir1/image.png      |
       | /dir2/         | image.png       | /dir2/dir4/image.png |
+
+  Example: Nonexistent directory
+    When I ask to generate a local inventory for a file
+    Then I get an error that the provided path is not a directory

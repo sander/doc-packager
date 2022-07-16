@@ -11,7 +11,9 @@ object LocalPageInventory:
   case class Page(path: PagePath, file: File, attachments: List[Attachment])
   opaque type BreadthFirstTraversal = List[Page]
 
-  enum Error:
+  enum InventoryError:
     case NotADirectory
 
-  def apply(path: Path): Either[Error, BreadthFirstTraversal] = ???
+  def apply(path: Path): Either[InventoryError, BreadthFirstTraversal] =
+    if path.toFile.isDirectory then ???
+    else Left(InventoryError.NotADirectory)
