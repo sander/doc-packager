@@ -55,19 +55,14 @@ class LocalPageInventorySuite extends munit.FunSuite:
 
   test("inventory() of a directory with a subdirectory with one page") {
     val directory = Node(dir, List(Node(subdir, Nil, List(bar))), Nil)
+    def name(s: String) = PageName.get(s).get
+    def path(s: String) = PagePath(name(s))
     assertEquals(
       LocalPageInventory.inventory(directory).toList,
       List(
         Page(PagePath.root, None, Nil),
-        Page(PagePath(PageName.get("subdir").get), None, Nil),
-        Page(
-          PagePath.appendTo(
-            PagePath(PageName.get("subdir").get),
-            PageName.get("bar").get
-          ),
-          Some(bar),
-          Nil
-        )
+        Page(path("subdir"), None, Nil),
+        Page(PagePath.appendTo(path("subdir"), name("bar")), Some(bar), Nil)
       )
     )
   }

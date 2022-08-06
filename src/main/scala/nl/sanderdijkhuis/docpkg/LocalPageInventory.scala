@@ -73,13 +73,13 @@ object LocalPageInventory:
       path: PagePath = PagePath.root
   ): BreadthFirstTraversal =
     // TODO ensure all PagePaths are unique; could add numbers
+    def name(s: String): PageName = PageName.from(s)
+    extension (p: PagePath)
+      def +(n: PageName): PagePath = PagePath.appendTo(p, n)
     (
-      node.directories.flatMap(d =>
-        inventory(
-          d,
-          PagePath.appendTo(path, PageName.from(d.path.getFileName.toString))
-        )
-      ),
+      node.directories.flatMap { case d @ Node(p, _, _) =>
+        inventory(d, path + name(p.getFileName.toString))
+      },
       node.files
     ) match
       case (Nil, Nil) => Nil
@@ -90,8 +90,8 @@ object LocalPageInventory:
           p <- files
           f = p.getFileName.toString
           if f != mainPageName && f.endsWith(pageSuffix)
-          n = PageName.from(p.getFileName.toString.dropRight(pageSuffix.length))
-        yield Page(PagePath.appendTo(path, n), Some(p), Nil)
+          n = name(p.getFileName.toString.dropRight(pageSuffix.length))
+        yield Page(path + n, Some(p), Nil)
         root :: directories ++ pages
 
   def apply(path: Path): Outcome =
