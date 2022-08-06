@@ -73,7 +73,6 @@ object LocalPageInventory:
       node: Node,
       path: PagePath = PagePath.root
   ): BreadthFirstTraversal =
-    // TODO ensure all PagePaths are unique; could add numbers
     def name(s: String): PageName = PageName.from(s)
     extension (p: PagePath)
       @targetName("appendTo")
