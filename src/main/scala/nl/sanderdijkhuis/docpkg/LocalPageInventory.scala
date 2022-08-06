@@ -85,7 +85,12 @@ object LocalPageInventory:
       case (Nil, Nil) => Nil
       case (directories, files) =>
         val main = files.find(_.getFileName.toString == mainPageName)
-        val root = Page(path, main, Nil)
+        val attachments = for
+          p <- files
+          f = p.getFileName.toString
+          if !f.endsWith(pageSuffix)
+        yield Attachment(AttachmentName.from(f), p)
+        val root = Page(path, main, attachments)
         val pages = for
           p <- files
           f = p.getFileName.toString

@@ -27,5 +27,10 @@ object ContentManagement:
 
   opaque type AttachmentName = String
   object AttachmentName:
+    val empty: PageName = "attachment.bin"
     def get(value: String): Option[AttachmentName] =
       attachmentNameRegex.findFirstIn(value)
+    def from(value: String): AttachmentName =
+      value.replaceAll(raw"[^a-zA-Z0-9-.]", "-") match
+        case "" => empty
+        case s  => s

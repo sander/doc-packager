@@ -1,7 +1,16 @@
 package nl.sanderdijkhuis.docpkg
 
-import nl.sanderdijkhuis.docpkg.ContentManagement.{PageName, PagePath}
-import nl.sanderdijkhuis.docpkg.LocalPageInventory.{InventoryError, Node, Page}
+import nl.sanderdijkhuis.docpkg.ContentManagement.{
+  AttachmentName,
+  PageName,
+  PagePath
+}
+import nl.sanderdijkhuis.docpkg.LocalPageInventory.{
+  Attachment,
+  InventoryError,
+  Node,
+  Page
+}
 
 import java.nio.file.{Files, NotDirectoryException, Path}
 
@@ -23,6 +32,7 @@ class LocalPageInventorySuite extends munit.FunSuite:
   private val foo = Path.of("dir/foo.html")
   private val subdir = Path.of("subdir")
   private val bar = Path.of("subdir/bar.html")
+  private val pic = Path.of("dir/picture.png")
 
   test("inventory() of an empty directory is empty") {
     val directory = Node(dir, Nil, Nil)
@@ -64,5 +74,14 @@ class LocalPageInventorySuite extends munit.FunSuite:
         Page(path("subdir"), None, Nil),
         Page(PagePath.appendTo(path("subdir"), name("bar")), Some(bar), Nil)
       )
+    )
+  }
+
+  test("inventory() of a directory with an attachment") {
+    val directory = Node(dir, Nil, List(pic))
+    val attachment = Attachment(AttachmentName.get("picture.png").get, pic)
+    assertEquals(
+      LocalPageInventory.inventory(directory).toList,
+      List(Page(PagePath.root, None, List(attachment)))
     )
   }
