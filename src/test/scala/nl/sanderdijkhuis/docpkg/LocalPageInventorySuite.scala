@@ -2,7 +2,7 @@ package nl.sanderdijkhuis.docpkg
 
 import nl.sanderdijkhuis.docpkg.LocalPageInventory.InventoryError
 
-import java.nio.file.{Files, Path}
+import java.nio.file.{Files, NotDirectoryException, Path}
 
 class LocalPageInventorySuite extends munit.FunSuite:
 
@@ -12,6 +12,7 @@ class LocalPageInventorySuite extends munit.FunSuite:
       Files.deleteIfExists
     )
 
-  temporaryFile.test("traverse() does not accept files") { path =>
-    assertEquals(LocalPageInventory.traverse(path), None)
+  temporaryFile.test("traverseDepthFirst() does not accept files") { path =>
+    val result = LocalPageInventory.traverseDepthFirst(path)
+    intercept[NotDirectoryException](result.toTry.get)
   }
