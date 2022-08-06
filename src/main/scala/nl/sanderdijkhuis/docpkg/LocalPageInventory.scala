@@ -1,18 +1,22 @@
 package nl.sanderdijkhuis.docpkg
 
-import nl.sanderdijkhuis.docpkg.ContentManagement.{AttachmentName, PagePath}
+import nl.sanderdijkhuis.docpkg.ContentManagement.{
+  AttachmentName,
+  PageName,
+  PagePath
+}
 import nl.sanderdijkhuis.docpkg.Traversal.{Error, Result}
 
 import java.io.{File, IOException}
 import java.nio.file.{Files, NotDirectoryException, Path}
-import scala.util.{Success, Try, Using, Failure}
+import scala.util.{Failure, Success, Try, Using}
 import scala.jdk.StreamConverters.*
 
 object LocalPageInventory:
-  case class Attachment(name: AttachmentName, file: File)
+  case class Attachment(name: AttachmentName, file: Path)
   case class Page(
       path: PagePath,
-      content: Option[File],
+      content: Option[Path],
       attachments: List[Attachment]
   )
 
@@ -33,7 +37,7 @@ object LocalPageInventory:
   object Depth:
     val maximum: Depth = 5
   extension (d: Depth)
-    private def decrement: Option[Depth] = if d == 0 then None else Some(d - 1)
+    def decrement: Option[Depth] = if d == 0 then None else Some(d - 1)
 
   case class MaximumDepthReached(path: Path)
       extends Throwable(
@@ -60,6 +64,25 @@ object LocalPageInventory:
       case (_, None)                       => Left(MaximumDepthReached(path))
       case (Failure(e: TraversalError), _) => Left(e)
       case (Failure(e), _)                 => throw e
+
+  val pageSuffix = ".html"
+  val mainPageName = s"index$pageSuffix"
+
+  def inventory(node: Node): BreadthFirstTraversal =
+    // TODO ensure all PagePaths are unique; could add numbers
+    (node.directories, node.files) match
+      case (Nil, Nil) => Nil
+      case _ =>
+        val path = PagePath.root
+        val main = node.files.find(_.getFileName.toString == mainPageName)
+        val root = Page(path, main, Nil)
+        val pages = for
+          p <- node.files
+          f = p.getFileName.toString
+          if f != mainPageName && f.endsWith(pageSuffix)
+          n = PageName.from(p.getFileName.toString.dropRight(pageSuffix.length))
+        yield Page(PagePath.appendTo(path, n), Some(p), Nil)
+        root :: pages
 
   def apply(path: Path): Outcome =
     if !path.toFile.isDirectory then Error(InventoryError.NotADirectory)

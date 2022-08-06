@@ -66,7 +66,7 @@ class StepDefinitions extends ScalaDsl with EN:
       val y = ListMap.from(
         traversal.get.toList.map(p =>
           p.path.toStringPath -> p.content.map(f =>
-            s"${f.toPath.toString.drop(directory.toString.length)}"
+            s"${f.toString.drop(directory.toString.length)}"
           )
         )
       )

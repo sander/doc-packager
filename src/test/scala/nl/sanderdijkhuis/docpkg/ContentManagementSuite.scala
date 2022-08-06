@@ -22,3 +22,14 @@ class ContentManagementSuite extends munit.FunSuite:
   test("rejects incorrect AttachmentName values") {
     for s <- incorrectNames do assert(AttachmentName.get(s).isEmpty)
   }
+
+  test("creates simple PageNames") {
+    val matches = Map(
+      "foo" -> "foo",
+      "foo bar" -> "foo-bar",
+      "foo$" -> "foo-",
+      "" -> "-"
+    )
+    for (a, b) <- matches
+    yield assertEquals(PageName.from(a), PageName.get(b).get)
+  }

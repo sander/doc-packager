@@ -9,7 +9,12 @@ object ContentManagement:
 
   opaque type PageName = String
   object PageName:
+    val empty: PageName = "-"
     def get(value: String): Option[PageName] = pageNameRegex.findFirstIn(value)
+    def from(value: String): PageName =
+      value.replaceAll(raw"[^a-zA-Z0-9-]", "-") match
+        case "" => empty
+        case s  => s
   extension (n: PageName) def value: String = n
 
   opaque type PagePath = List[PageName]
