@@ -4,7 +4,7 @@ import nl.sanderdijkhuis.docpkg.ContentManagement.{AttachmentName, PagePath}
 import nl.sanderdijkhuis.docpkg.Traversal.{Error, Result}
 
 import java.io.File
-import java.nio.file.Path
+import java.nio.file.{Files, Path}
 
 object LocalPageInventory:
   case class Attachment(name: AttachmentName, file: File)
@@ -30,7 +30,7 @@ object LocalPageInventory:
     case File(name: String)
 
   def traverse(path: Path): Option[TraversalNode] =
-    Some(path).filter(_.toFile.isDirectory).map(_ => ???)
+    Some(path).filter(Files.isDirectory(_)).map(_ => ???)
 
   def apply(path: Path): Outcome =
     if !path.toFile.isDirectory then Error(InventoryError.NotADirectory)
