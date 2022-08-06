@@ -78,28 +78,33 @@ object LocalPageInventory:
     extension (p: PagePath)
       @targetName("appendTo")
       def +(n: PageName): PagePath = PagePath.appendTo(p, n)
-    (
-      node.directories.flatMap { case d @ Node(p, _, _) =>
-        inventory(d, path + name(p.getFileName.toString))
-      },
-      node.files
-    ) match
+    val directories = node.directories.flatMap { case d @ Node(p, _, _) =>
+      inventory(d, path + name(p.getFileName.toString))
+    }
+    (directories, node.files) match
       case (Nil, Nil) => Nil
       case (directories, files) =>
+        val (directoriesWithContent, directoriesWithoutContent) =
+          directories.partition(page =>
+            directories.exists(d =>
+              d.path.startsWith(page.path) && d.content.nonEmpty
+            )
+          )
+        val deepAttachments = directoriesWithoutContent.flatMap(_.attachments)
         val main = files.find(_.getFileName.toString == mainPageName)
-        val attachments = for
+        val directAttachments = for
           p <- files
           f = p.getFileName.toString
           if !f.endsWith(pageSuffix)
         yield Attachment(AttachmentName.from(f), p)
-        val root = Page(path, main, attachments)
+        val root = Page(path, main, directAttachments ++ deepAttachments)
         val pages = for
           p <- files
           f = p.getFileName.toString
           if f != mainPageName && f.endsWith(pageSuffix)
           n = name(p.getFileName.toString.dropRight(pageSuffix.length))
         yield Page(path + n, Some(p), Nil)
-        root :: directories ++ pages
+        root :: directoriesWithContent ++ pages
 
   def apply(path: Path): Outcome =
     if !path.toFile.isDirectory then Error(InventoryError.NotADirectory)

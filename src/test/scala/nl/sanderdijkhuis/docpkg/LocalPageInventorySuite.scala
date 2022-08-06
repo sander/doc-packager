@@ -33,6 +33,7 @@ class LocalPageInventorySuite extends munit.FunSuite:
   private val subdir = Path.of("subdir")
   private val bar = Path.of("subdir/bar.html")
   private val pic = Path.of("dir/picture.png")
+  private val subpic = Path.of("dir/subdir/subpicture.png")
 
   test("inventory() of an empty directory is empty") {
     val directory = Node(dir, Nil, Nil)
@@ -80,6 +81,16 @@ class LocalPageInventorySuite extends munit.FunSuite:
   test("inventory() of a directory with an attachment") {
     val directory = Node(dir, Nil, List(pic))
     val attachment = Attachment(AttachmentName.get("picture.png").get, pic)
+    assertEquals(
+      LocalPageInventory.inventory(directory).toList,
+      List(Page(PagePath.root, None, List(attachment)))
+    )
+  }
+
+  test("inventory() of a directory with a subdirectory with an attachment") {
+    val directory = Node(dir, List(Node(subdir, Nil, List(subpic))), Nil)
+    val attachment =
+      Attachment(AttachmentName.get("subpicture.png").get, subpic)
     assertEquals(
       LocalPageInventory.inventory(directory).toList,
       List(Page(PagePath.root, None, List(attachment)))
