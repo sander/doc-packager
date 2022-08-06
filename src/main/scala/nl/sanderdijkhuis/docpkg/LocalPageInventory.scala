@@ -9,6 +9,7 @@ import nl.sanderdijkhuis.docpkg.Traversal.{Error, Result}
 
 import java.io.{File, IOException}
 import java.nio.file.{Files, NotDirectoryException, Path}
+import scala.annotation.targetName
 import scala.util.{Failure, Success, Try, Using}
 import scala.jdk.StreamConverters.*
 
@@ -75,6 +76,7 @@ object LocalPageInventory:
     // TODO ensure all PagePaths are unique; could add numbers
     def name(s: String): PageName = PageName.from(s)
     extension (p: PagePath)
+      @targetName("appendTo")
       def +(n: PageName): PagePath = PagePath.appendTo(p, n)
     (
       node.directories.flatMap { case d @ Node(p, _, _) =>
