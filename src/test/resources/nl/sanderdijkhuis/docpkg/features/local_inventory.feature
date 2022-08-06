@@ -14,15 +14,15 @@ Feature: Local inventory
     Then the inventory contains the following pages:
       | Inventory path   | File path             |
       | /                | /index.html           |
-      | /other           | /other.html           |
-      | /dir1/           | /dir1/index.html      |
-      | /dir2/           |                       |
-      | /dir2/dir3/      |                       |
+      | /dir1            | /dir1/index.html      |
+      | /dir2            |                       |
+      | /dir2/dir3       |                       |
       | /dir2/dir3/other | /dir2/dir3/other.html |
+      | /other           | /other.html           |
     And the inventory contains the following attachments:
       | Inventory path | Attachment name | File path            |
-      | /dir1/         | image.png       | /dir1/image.png      |
-      | /dir2/         | image.png       | /dir2/dir4/image.png |
+      | /dir1          | image.png       | /dir1/image.png      |
+      | /dir2          | image.png       | /dir2/dir4/image.png |
 
   Example: Nonexistent directory
     When I ask to generate a local inventory for a file

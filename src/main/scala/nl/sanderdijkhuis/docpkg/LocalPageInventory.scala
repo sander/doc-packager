@@ -1,19 +1,30 @@
 package nl.sanderdijkhuis.docpkg
 
 import nl.sanderdijkhuis.docpkg.ContentManagement.{AttachmentName, PagePath}
+import nl.sanderdijkhuis.docpkg.Traversal.{Error, Result}
 
 import java.io.File
 import java.nio.file.Path
-import scala.collection.immutable.ListMap
 
 object LocalPageInventory:
   case class Attachment(name: AttachmentName, file: File)
-  case class Page(path: PagePath, file: File, attachments: List[Attachment])
+  case class Page(
+      path: PagePath,
+      content: Option[File],
+      attachments: List[Attachment]
+  )
+
   opaque type BreadthFirstTraversal = List[Page]
+  extension (t: BreadthFirstTraversal) def toList: List[Page] = t
 
-  enum InventoryError:
-    case NotADirectory
+  sealed trait InventoryError
+  object InventoryError:
+    case object NotADirectory extends InventoryError
+    case class InvalidAttachmentNameError(path: Path) extends InventoryError
+    case class InvalidPageNameError(path: Path) extends InventoryError
 
-  def apply(path: Path): Either[InventoryError, BreadthFirstTraversal] =
-    if path.toFile.isDirectory then ???
-    else Left(InventoryError.NotADirectory)
+  type Outcome = Result[InventoryError, BreadthFirstTraversal]
+
+  def apply(path: Path): Outcome =
+    if !path.toFile.isDirectory then Error(InventoryError.NotADirectory)
+    else ???

@@ -7,10 +7,13 @@ import nl.sanderdijkhuis.docpkg.LocalPageInventory.{
   BreadthFirstTraversal,
   InventoryError
 }
+import munit.Assertions.*
 
 import java.io.File
 import java.nio.file.{Files, Path, Paths}
 import java.util.Comparator
+
+import scala.collection.immutable.ListMap
 
 class StepDefinitions extends ScalaDsl with EN:
   val directory: Path =
@@ -18,6 +21,8 @@ class StepDefinitions extends ScalaDsl with EN:
   var success: Boolean = false
   var traversal: Option[BreadthFirstTraversal] = None
   var error: Option[InventoryError] = None
+
+  given munit.Location = munit.Location.empty // Enable MUnit assertions
 
   Before {
     directory.toFile.mkdirs()
@@ -47,11 +52,25 @@ class StepDefinitions extends ScalaDsl with EN:
       assert(f.createNewFile())
   }
   When("""I generate a local inventory""") { () =>
-    traversal = LocalPageInventory(directory).toOption
+    val result = LocalPageInventory(directory)
+    assertEquals(result.error, None)
+    traversal = result.toOption
   }
   Then("""the inventory contains the following pages:""") {
     (dataTable: DataTable) =>
-      throw PendingException()
+      val x =
+        ListMap.from(
+          for f <- dataTable.asScalaMaps.toList
+          yield f("Inventory path").get -> f("File path")
+        )
+      val y = ListMap.from(
+        traversal.get.toList.map(p =>
+          p.path.toStringPath -> p.content.map(f =>
+            s"${f.toPath.toString.drop(directory.toString.length)}"
+          )
+        )
+      )
+      assertEquals(y, x)
   }
   Then("""the inventory contains the following attachments:""") {
     (dataTable: DataTable) =>
@@ -59,7 +78,7 @@ class StepDefinitions extends ScalaDsl with EN:
   }
   Given("I ask to generate a local inventory for a file") { () =>
     val file = Files.createTempFile(directory, "file", "txt")
-    error = LocalPageInventory(file).left.toOption
+    error = LocalPageInventory(file).error
   }
   Then("I get an error that the provided path is not a directory") { () =>
     assert(error.contains(InventoryError.NotADirectory))
