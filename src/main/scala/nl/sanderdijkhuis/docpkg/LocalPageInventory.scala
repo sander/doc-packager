@@ -70,7 +70,7 @@ object LocalPageInventory:
 
   def inventory(node: Node): BreadthFirstTraversal =
     // TODO ensure all PagePaths are unique; could add numbers
-    (node.directories, node.files) match
+    (node.directories.flatMap(inventory), node.files) match
       case (Nil, Nil) => Nil
       case _ =>
         val path = PagePath.root

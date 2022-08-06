@@ -18,31 +18,36 @@ class LocalPageInventorySuite extends munit.FunSuite:
     intercept[NotDirectoryException](result.toTry.get)
   }
 
+  private val dir = Path.of("dir")
+  private val index = Path.of("dir/index.html")
+  private val foo = Path.of("dir/foo.html")
+  private val subdir = Path.of("subdir")
+
   test("inventory() of an empty directory is empty") {
-    val directory = Node(Path.of("dir"), Nil, Nil)
+    val directory = Node(dir, Nil, Nil)
     assertEquals(LocalPageInventory.inventory(directory).toList, Nil)
   }
 
   test("inventory() of a directory with one page") {
-    val directory = Node(Path.of("dir"), Nil, List(Path.of("dir/foo.html")))
+    val directory = Node(dir, Nil, List(foo))
     assertEquals(
       LocalPageInventory.inventory(directory).toList,
       List(
         Page(PagePath.root, None, Nil),
-        Page(
-          PagePath(PageName.get("foo").get),
-          Some(Path.of("dir/foo.html")),
-          Nil
-        )
+        Page(PagePath(PageName.get("foo").get), Some(foo), Nil)
       )
     )
   }
 
   test("inventory() of a directory with one main page") {
-    val index = Path.of("dir/index.html")
-    val directory = Node(Path.of("dir"), Nil, List(index))
+    val directory = Node(dir, Nil, List(index))
     assertEquals(
       LocalPageInventory.inventory(directory).toList,
       List(Page(PagePath.root, Some(index), Nil))
     )
+  }
+
+  test("inventory() of a directory with an empty subdirectory") {
+    val directory = Node(dir, List(Node(subdir, Nil, Nil)), Nil)
+    assertEquals(LocalPageInventory.inventory(directory).toList, Nil)
   }
