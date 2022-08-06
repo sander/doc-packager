@@ -25,6 +25,13 @@ object LocalPageInventory:
 
   type Outcome = Result[InventoryError, BreadthFirstTraversal]
 
+  enum TraversalNode:
+    case Directory(name: String, children: List[TraversalNode])
+    case File(name: String)
+
+  def traverse(path: Path): Option[TraversalNode] =
+    Some(path).filter(_.toFile.isDirectory).map(_ => ???)
+
   def apply(path: Path): Outcome =
     if !path.toFile.isDirectory then Error(InventoryError.NotADirectory)
     else ???
