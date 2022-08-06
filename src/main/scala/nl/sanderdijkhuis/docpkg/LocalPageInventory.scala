@@ -68,21 +68,31 @@ object LocalPageInventory:
   val pageSuffix = ".html"
   val mainPageName = s"index$pageSuffix"
 
-  def inventory(node: Node): BreadthFirstTraversal =
+  def inventory(
+      node: Node,
+      path: PagePath = PagePath.root
+  ): BreadthFirstTraversal =
     // TODO ensure all PagePaths are unique; could add numbers
-    (node.directories.flatMap(inventory), node.files) match
+    (
+      node.directories.flatMap(d =>
+        inventory(
+          d,
+          PagePath.appendTo(path, PageName.from(d.path.getFileName.toString))
+        )
+      ),
+      node.files
+    ) match
       case (Nil, Nil) => Nil
-      case _ =>
-        val path = PagePath.root
-        val main = node.files.find(_.getFileName.toString == mainPageName)
+      case (directories, files) =>
+        val main = files.find(_.getFileName.toString == mainPageName)
         val root = Page(path, main, Nil)
         val pages = for
-          p <- node.files
+          p <- files
           f = p.getFileName.toString
           if f != mainPageName && f.endsWith(pageSuffix)
           n = PageName.from(p.getFileName.toString.dropRight(pageSuffix.length))
         yield Page(PagePath.appendTo(path, n), Some(p), Nil)
-        root :: pages
+        root :: directories ++ pages
 
   def apply(path: Path): Outcome =
     if !path.toFile.isDirectory then Error(InventoryError.NotADirectory)

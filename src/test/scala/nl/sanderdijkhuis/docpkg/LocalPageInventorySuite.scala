@@ -22,6 +22,7 @@ class LocalPageInventorySuite extends munit.FunSuite:
   private val index = Path.of("dir/index.html")
   private val foo = Path.of("dir/foo.html")
   private val subdir = Path.of("subdir")
+  private val bar = Path.of("subdir/bar.html")
 
   test("inventory() of an empty directory is empty") {
     val directory = Node(dir, Nil, Nil)
@@ -50,4 +51,23 @@ class LocalPageInventorySuite extends munit.FunSuite:
   test("inventory() of a directory with an empty subdirectory") {
     val directory = Node(dir, List(Node(subdir, Nil, Nil)), Nil)
     assertEquals(LocalPageInventory.inventory(directory).toList, Nil)
+  }
+
+  test("inventory() of a directory with a subdirectory with one page") {
+    val directory = Node(dir, List(Node(subdir, Nil, List(bar))), Nil)
+    assertEquals(
+      LocalPageInventory.inventory(directory).toList,
+      List(
+        Page(PagePath.root, None, Nil),
+        Page(PagePath(PageName.get("subdir").get), None, Nil),
+        Page(
+          PagePath.appendTo(
+            PagePath(PageName.get("subdir").get),
+            PageName.get("bar").get
+          ),
+          Some(bar),
+          Nil
+        )
+      )
+    )
   }
