@@ -135,7 +135,7 @@ class LocalPageInventorySuite extends munit.FunSuite:
     )
   }
 
-  test("inventory with duplicate page and directory names".ignore) {
+  test("inventory with duplicate page and directory names") {
     val directory =
       Node(
         dir,
@@ -172,14 +172,14 @@ class LocalPageInventorySuite extends munit.FunSuite:
           Nil
         ),
         Page(
-          PagePath(PageName.get("f--2").get),
+          PagePath(PageName.get("f---2").get),
           None,
           Nil
         ),
         Page(
           PagePath
             .appendTo(
-              PagePath(PageName.get("f--2").get),
+              PagePath(PageName.get("f---2").get),
               PageName.get("bar").get
             ),
           Some(pageInSubdirWithSpecialCharacter2),

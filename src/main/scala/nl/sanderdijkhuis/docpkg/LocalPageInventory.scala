@@ -103,9 +103,9 @@ object LocalPageInventory:
       node: Node,
       path: PagePath = PagePath.root
   ): BreadthFirstTraversal =
-    case class State(
+    case class State[T](
         counters: Map[PageName, Int] = Map.empty,
-        out: List[Page] = List.empty
+        out: List[T] = List.empty
     )
     def name(s: String): PageName = PageName.from(s)
     def rename(name: PageName, i: Int): PageName =
@@ -113,9 +113,32 @@ object LocalPageInventory:
     extension (p: PagePath)
       @targetName("appendTo")
       def +(n: PageName): PagePath = PagePath.appendTo(p, n)
-    val directories = node.directories.flatMap { case d @ Node(p, _, _) =>
-      inventory(d, path + name(p.getFileName.toString))
-    }
+    val din = node.directories
+      .foldLeft(State[(PageName, Node)]()) { case (s, node) =>
+        val initialName = name(node.path.getFileName.toString)
+        s.counters.get(initialName) match
+          case Some(i) =>
+            Iterator
+              .from(i)
+              .map(j => j -> rename(initialName, j + 1))
+              .find { case (_, n) =>
+                node.directories.forall(_._1 != n)
+              }
+              .map { case (j, n) =>
+                State(
+                  s.counters + (initialName -> (j + 1)),
+                  (n -> node) :: s.out
+                )
+              }
+              .get
+          case None =>
+            State(
+              s.counters + (initialName -> initialCounter),
+              (initialName -> node) :: s.out
+            )
+      }
+    val directories = din.out.reverse
+      .flatMap { case (name, node) => inventory(node, path + name) }
     (directories, node.files) match
       case (Nil, Nil) => Nil
       case (directories, files) =>
@@ -144,7 +167,7 @@ object LocalPageInventory:
           n = name(p.getFileName.toString.dropRight(pageSuffix.length))
         yield n -> p
         val pages = pin
-          .foldLeft(State()) { case (s, (n, p)) =>
+          .foldLeft(State[Page](din.counters)) { case (s, (n, p)) =>
             s.counters.get(n) match
               case Some(i) =>
                 Iterator
@@ -153,10 +176,10 @@ object LocalPageInventory:
                   .find { case (_, n) =>
                     pin.forall(_._1 != n)
                   }
-                  .map { case (j, n) =>
+                  .map { case (j, m) =>
                     State(
                       s.counters + (n -> (j + 1)),
-                      Page(path + n, Some(p), Nil) :: s.out
+                      Page(path + m, Some(p), Nil) :: s.out
                     )
                   }
                   .get
