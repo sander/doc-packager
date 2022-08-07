@@ -22,7 +22,7 @@ class LocalPageInventorySuite extends munit.FunSuite:
       Files.deleteIfExists
     )
 
-  temporaryFile.test("traverseDepthFirst() does not accept files") { path =>
+  temporaryFile.test("reject files instead of directories") { path =>
     val result = LocalPageInventory.traverseDepthFirst(path)
     intercept[NotDirectoryException](result.toTry.get)
   }
@@ -37,12 +37,12 @@ class LocalPageInventorySuite extends munit.FunSuite:
   private val pageWithSpecialCharacter1 = Path.of("dir/fóó.html")
   private val pageWithSpecialCharacter2 = Path.of("dir/fòò.html")
 
-  test("inventory() of an empty directory is empty") {
+  test("consider an empty directory to be empty") {
     val directory = Node(dir, Nil, Nil)
     assertEquals(LocalPageInventory.inventory(directory).toList, Nil)
   }
 
-  test("inventory() of a directory with one page") {
+  test("inventory a directory with one page") {
     val directory = Node(dir, Nil, List(foo))
     assertEquals(
       LocalPageInventory.inventory(directory).toList,
@@ -53,7 +53,7 @@ class LocalPageInventorySuite extends munit.FunSuite:
     )
   }
 
-  test("inventory() of a directory with one main page") {
+  test("inventory a directory with one main page") {
     val directory = Node(dir, Nil, List(index))
     assertEquals(
       LocalPageInventory.inventory(directory).toList,
@@ -61,12 +61,12 @@ class LocalPageInventorySuite extends munit.FunSuite:
     )
   }
 
-  test("inventory() of a directory with an empty subdirectory") {
+  test("inventory a directory with an empty subdirectory") {
     val directory = Node(dir, List(Node(subdir, Nil, Nil)), Nil)
     assertEquals(LocalPageInventory.inventory(directory).toList, Nil)
   }
 
-  test("inventory() of a directory with a subdirectory with one page") {
+  test("inventory a directory with a subdirectory with one page") {
     val directory = Node(dir, List(Node(subdir, Nil, List(bar))), Nil)
     def name(s: String) = PageName.get(s).get
     def path(s: String) = PagePath(name(s))
@@ -80,7 +80,7 @@ class LocalPageInventorySuite extends munit.FunSuite:
     )
   }
 
-  test("inventory() of a directory with an attachment") {
+  test("inventory a directory with an attachment") {
     val directory = Node(dir, Nil, List(pic))
     val attachment = Attachment(AttachmentName.get("picture.png").get, pic)
     assertEquals(
@@ -89,7 +89,7 @@ class LocalPageInventorySuite extends munit.FunSuite:
     )
   }
 
-  test("inventory() of a directory with a subdirectory with an attachment") {
+  test("inventory a directory with a subdirectory with an attachment") {
     val directory = Node(dir, List(Node(subdir, Nil, List(subpic))), Nil)
     val attachment =
       Attachment(AttachmentName.get("picture.png").get, subpic)
@@ -99,7 +99,7 @@ class LocalPageInventorySuite extends munit.FunSuite:
     )
   }
 
-  test("inventory() with duplicate attachment names".ignore) { // TODO
+  test("inventory with duplicate attachment names".ignore) { // TODO
     val directory = Node(dir, List(Node(subdir, Nil, List(subpic))), List(pic))
     val attachment1 = Attachment(AttachmentName.get("picture.png").get, pic)
     val attachment2 =
@@ -110,7 +110,7 @@ class LocalPageInventorySuite extends munit.FunSuite:
     )
   }
 
-  test("inventory() with duplicate page names".ignore) { // TODO
+  test("inventory with duplicate page names".ignore) { // TODO
     val directory =
       Node(dir, Nil, List(pageWithSpecialCharacter1, pageWithSpecialCharacter2))
     assertEquals(
