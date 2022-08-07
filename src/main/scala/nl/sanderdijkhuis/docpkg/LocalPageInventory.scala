@@ -161,7 +161,3 @@ object LocalPageInventory:
           Page(PagePath.appendTo(path, name), Some(p), Nil)
         }
         root :: directoriesWithContent ++ pages
-
-  def apply(path: Path): Outcome =
-    if !path.toFile.isDirectory then Error(InventoryError.NotADirectory)
-    else ???

@@ -5,14 +5,14 @@ import io.cucumber.scala.{EN, PendingException, ScalaDsl, Scenario}
 import io.cucumber.scala.Implicits.*
 import nl.sanderdijkhuis.docpkg.LocalPageInventory.{
   BreadthFirstTraversal,
-  InventoryError
+  InventoryError,
+  TraversalError
 }
 import munit.Assertions.*
 
 import java.io.File
-import java.nio.file.{Files, Path, Paths}
+import java.nio.file.{Files, NotDirectoryException, Path, Paths}
 import java.util.Comparator
-
 import scala.collection.immutable.ListMap
 
 class StepDefinitions extends ScalaDsl with EN:
@@ -20,7 +20,7 @@ class StepDefinitions extends ScalaDsl with EN:
     Files.createTempDirectory(Paths.get("target"), getClass.getName)
   var success: Boolean = false
   var traversal: Option[BreadthFirstTraversal] = None
-  var error: Option[InventoryError] = None
+  var error: Option[TraversalError] = None
 
   given munit.Location = munit.Location.empty // Enable MUnit assertions
 
@@ -52,9 +52,11 @@ class StepDefinitions extends ScalaDsl with EN:
       assert(f.createNewFile())
   }
   When("""I generate a local inventory""") { () =>
-    val result = LocalPageInventory(directory)
-    assertEquals(result.error, None)
-    traversal = result.toOption
+    val result = LocalPageInventory.traverseDepthFirst(directory)
+    assertEquals(result.left.toOption, None)
+    traversal = Some(
+      LocalPageInventory.inventory(result.getOrElse(throw new Exception()))
+    )
   }
   Then("""the inventory contains the following pages:""") {
     (dataTable: DataTable) =>
@@ -78,8 +80,8 @@ class StepDefinitions extends ScalaDsl with EN:
   }
   Given("I ask to generate a local inventory for a file") { () =>
     val file = Files.createTempFile(directory, "file", "txt")
-    error = LocalPageInventory(file).error
+    error = LocalPageInventory.traverseDepthFirst(file).left.toOption
   }
   Then("I get an error that the provided path is not a directory") { () =>
-    assert(error.contains(InventoryError.NotADirectory))
+    intercept[NotDirectoryException](error.toLeft(None).toTry.get)
   }
