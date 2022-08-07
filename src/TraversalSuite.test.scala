@@ -1,4 +1,4 @@
-package nl.sanderdijkhuis.docpkg
+package docpkg
 
 import Traversal.*
 

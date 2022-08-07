@@ -1,8 +1,8 @@
 //> using testFramework "munit.Framework"
 
-package nl.sanderdijkhuis.docpkg
+package docpkg
 
-import nl.sanderdijkhuis.docpkg.ContentManagement.{AttachmentName, PageName}
+import docpkg.ContentManagement.{AttachmentName, PageName}
 
 class ContentManagementSuite extends munit.FunSuite:
 

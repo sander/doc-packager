@@ -1,12 +1,8 @@
-package nl.sanderdijkhuis.docpkg
+package docpkg
 
-import nl.sanderdijkhuis.docpkg.ContentManagement.{
-  AttachmentName,
-  PageName,
-  PagePath
-}
-import nl.sanderdijkhuis.docpkg.LocalPageInventory.Page
-import nl.sanderdijkhuis.docpkg.Traversal.{Error, Result}
+import docpkg.ContentManagement.{AttachmentName, PageName, PagePath}
+import docpkg.LocalPageInventory.Page
+import docpkg.Traversal.{Error, Result}
 
 import java.io.{File, IOException}
 import java.nio.file.{Files, NotDirectoryException, Path}

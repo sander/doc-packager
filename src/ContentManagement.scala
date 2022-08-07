@@ -1,4 +1,4 @@
-package nl.sanderdijkhuis.docpkg
+package docpkg
 
 import java.nio.file.Path
 import scala.annotation.targetName

@@ -1,16 +1,7 @@
-package nl.sanderdijkhuis.docpkg
+package docpkg
 
-import nl.sanderdijkhuis.docpkg.ContentManagement.{
-  AttachmentName,
-  PageName,
-  PagePath
-}
-import nl.sanderdijkhuis.docpkg.LocalPageInventory.{
-  Attachment,
-  InventoryError,
-  Node,
-  Page
-}
+import docpkg.ContentManagement.{AttachmentName, PageName, PagePath}
+import docpkg.LocalPageInventory.{Attachment, InventoryError, Node, Page}
 
 import java.nio.file.{Files, NotDirectoryException, Path}
 
