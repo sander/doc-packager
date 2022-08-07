@@ -28,9 +28,9 @@ object ContentManagement:
     def appendTo(path: PagePath, name: PageName): PagePath = name :: path
   extension (p: PagePath)
     def toStringPath: String = "/" + p.reverse.mkString("/")
-    def startsWith(q: PagePath): Boolean = p match
+    def hasAncestor(q: PagePath): Boolean = p match
       case t if t == q => true
-      case _ :: t      => t.startsWith(q)
+      case _ :: t      => t.hasAncestor(q)
       case Nil         => false
 
   opaque type AttachmentName = String

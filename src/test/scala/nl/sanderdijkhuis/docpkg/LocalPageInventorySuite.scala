@@ -201,7 +201,7 @@ class LocalPageInventorySuite extends munit.FunSuite:
     )
   }
 
-  test("inventory with page in sub-sub-directory".ignore) {
+  test("inventory with page in sub-sub-directory") {
     val directory = Node(
       dir,
       List(Node(subdir, List(Node(subsubdir, Nil, List(subsubdirPage))), Nil)),
@@ -217,7 +217,7 @@ class LocalPageInventorySuite extends munit.FunSuite:
         Page(PagePath.root, None, Nil),
         Page(subdirPath, None, Nil),
         Page(subsubdirPath, None, Nil),
-        Page(pagePath, None, Nil)
+        Page(pagePath, Some(subsubdirPage), Nil)
       )
     )
   }

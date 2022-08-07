@@ -129,7 +129,7 @@ object LocalPageInventory:
         val (directoriesWithContent, directoriesWithoutContent) =
           directories.partition(page =>
             directories.exists(d =>
-              d.path.startsWith(page.path) && d.content.nonEmpty
+              d.path.hasAncestor(page.path) && d.content.nonEmpty
             )
           )
         val deepAttachments = directoriesWithoutContent.flatMap(_.attachments)
