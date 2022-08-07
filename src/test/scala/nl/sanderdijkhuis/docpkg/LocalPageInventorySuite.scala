@@ -40,6 +40,8 @@ class LocalPageInventorySuite extends munit.FunSuite:
   private val subdirWithSpecialCharacter2 = Path.of("dir/fåå")
   private val pageInSubdirWithSpecialCharacter1 = Path.of("dir/föö/bar.html")
   private val pageInSubdirWithSpecialCharacter2 = Path.of("dir/fåå/bar.html")
+  private val subsubdir = Path.of("dir/subdir/subsubdir")
+  private val subsubdirPage = Path.of("dir/subdir/subsubdir/page.html")
 
   test("consider an empty directory to be empty") {
     val directory = Node(dir, Nil, Nil)
@@ -195,6 +197,27 @@ class LocalPageInventorySuite extends munit.FunSuite:
           Some(pageWithSpecialCharacter2),
           Nil
         )
+      )
+    )
+  }
+
+  test("inventory with page in sub-sub-directory".ignore) {
+    val directory = Node(
+      dir,
+      List(Node(subdir, List(Node(subsubdir, Nil, List(subsubdirPage))), Nil)),
+      Nil
+    )
+    val subdirPath = PagePath(PageName.get("subdir").get)
+    val subsubdirPath =
+      PagePath.appendTo(subdirPath, PageName.get("subsubdir").get)
+    val pagePath = PagePath.appendTo(subsubdirPath, PageName.get("page").get)
+    assertEquals(
+      LocalPageInventory.inventory(directory).toList,
+      List(
+        Page(PagePath.root, None, Nil),
+        Page(subdirPath, None, Nil),
+        Page(subsubdirPath, None, Nil),
+        Page(pagePath, None, Nil)
       )
     )
   }
