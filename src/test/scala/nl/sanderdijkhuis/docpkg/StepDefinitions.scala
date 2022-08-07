@@ -60,23 +60,41 @@ class StepDefinitions extends ScalaDsl with EN:
   }
   Then("""the inventory contains the following pages:""") {
     (dataTable: DataTable) =>
-      val x =
+      val expectedInventoryPathToFilePath =
         ListMap.from(
           for f <- dataTable.asScalaMaps.toList
           yield f("Inventory path").get -> f("File path")
         )
-      val y = ListMap.from(
+      val actualInventoryPathToFilePath = ListMap.from(
         traversal.get.toList.map(p =>
           p.path.toStringPath -> p.content.map(f =>
-            s"${f.toString.drop(directory.toString.length)}"
+            f.toString.drop(directory.toString.length)
           )
         )
       )
-      assertEquals(y, x)
+      assertEquals(
+        actualInventoryPathToFilePath,
+        expectedInventoryPathToFilePath
+      )
   }
   Then("""the inventory contains the following attachments:""") {
     (dataTable: DataTable) =>
-      throw PendingException()
+      val expectedAttachments =
+        for f <- dataTable.asScalaMaps.toList
+        yield (
+          f("Inventory path").get,
+          f("Attachment name").get,
+          directory.resolve(f("File path").get.drop(1)).toString
+        )
+      val actualAttachments = for
+        f <- traversal.get.toList
+        a <- f.attachments
+      yield (
+        f.path.toStringPath,
+        a.name.toString,
+        a.file.toString
+      )
+      assertEquals(actualAttachments, expectedAttachments)
   }
   Given("I ask to generate a local inventory for a file") { () =>
     val file = Files.createTempFile(directory, "file", "txt")

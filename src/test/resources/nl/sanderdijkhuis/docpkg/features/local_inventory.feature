@@ -1,6 +1,5 @@
 Feature: Local inventory
 
-  @wip
   Example: Site with attachments
     Given a directory with contents
       | File path             |
