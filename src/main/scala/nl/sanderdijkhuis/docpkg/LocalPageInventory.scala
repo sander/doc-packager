@@ -81,7 +81,7 @@ object LocalPageInventory:
       rename: (N, Int) => N,
       changeName: (T, N) => T,
       initialState: UniquenessState[T, N] = UniquenessState[T, N]()
-  ): List[T] =
+  ): UniquenessState[T, N] =
     val names = in.map(name)
     def operator(state: UniquenessState[T, N], x: T): UniquenessState[T, N] =
       state.counters.get(name(x)) match
@@ -104,7 +104,8 @@ object LocalPageInventory:
             state.counters + (name(x) -> initialCounter),
             x :: state.out
           )
-    in.foldLeft(initialState)(operator).out.reverse
+    val UniquenessState(counters, out) = in.foldLeft(initialState)(operator)
+    UniquenessState(counters, out.reverse)
 
   private def ensureUniqueAttachmentNames(
       in: List[Attachment]
@@ -114,7 +115,7 @@ object LocalPageInventory:
       _.name,
       (n, i) => n.rename(i),
       (a, n) => a.copy(name = n)
-    )
+    ).out
 
   def inventory(
       node: Node,
