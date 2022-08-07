@@ -1,6 +1,7 @@
 package nl.sanderdijkhuis.docpkg
 
 import java.nio.file.Path
+import scala.annotation.targetName
 
 object ContentManagement:
 
@@ -15,7 +16,10 @@ object ContentManagement:
       value.replaceAll(raw"[^a-zA-Z0-9-]", "-") match
         case "" => empty
         case s  => s
-  extension (n: PageName) def value: String = n
+  extension (n: PageName)
+    def value: String = n
+    @targetName("renamePage") def rename(i: Int): PageName =
+      PageName.from(s"$n-$i")
 
   opaque type PagePath = List[PageName]
   object PagePath:
@@ -39,7 +43,7 @@ object ContentManagement:
         case "" => empty
         case s  => s
   extension (n: AttachmentName)
-    def rename(i: Int): AttachmentName =
+    @targetName("renameAttachment") def rename(i: Int): AttachmentName =
       val withExtension = raw"\A(.+)\.(.+)\z".r
       AttachmentName
         .from(n.toString match
