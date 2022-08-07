@@ -71,33 +71,50 @@ object LocalPageInventory:
   private val mainPageName = s"index$pageSuffix"
   private val initialCounter = 1
 
-  private def ensureUniqueAttachmentNames(
-      in: List[Attachment]
-  ): List[Attachment] =
-    case class State(
-        counters: Map[AttachmentName, Int] = Map.empty,
-        out: List[Attachment] = List.empty
-    )
-    def rename(name: AttachmentName, i: Int): AttachmentName =
-      val withExtension = raw"\A(.+)\.(.+)\z".r
-      AttachmentName.from(name.toString match
-        case withExtension(name, extension) => s"$name-$i.$extension"
-        case s                              => s"$s-$i"
-      )
-    in.foldLeft(State())((s, a) =>
-      s.counters.get(a.name) match
+  private case class UniquenessState[T, N](
+      counters: Map[N, Int] = Map.empty[N, Int],
+      out: List[T] = List.empty
+  )
+  private def ensureUniqueNames[T, N](
+      in: List[T],
+      name: T => N,
+      rename: (N, Int) => N,
+      changeName: (T, N) => T,
+      initialState: UniquenessState[T, N] = UniquenessState[T, N]()
+  ): List[T] =
+    val names = in.map(name)
+    def operator(state: UniquenessState[T, N], x: T): UniquenessState[T, N] =
+      state.counters.get(name(x)) match
         case Some(i) =>
           Iterator
             .from(i)
-            .map(j => j -> rename(a.name, j + 1))
-            .find { case (_, n) => in.forall(_.name != n) }
+            .map(j => j -> rename(name(x), j + 1))
+            .find { case (_, n) =>
+              !names.contains(n)
+            }
             .map { case (j, n) =>
-              State(s.counters + (a.name -> (j + 1)), a.copy(name = n) :: s.out)
+              UniquenessState(
+                state.counters + (name(x) -> (j + 1)),
+                changeName(x, n) :: state.out
+              )
             }
             .get
-        case None => State(s.counters + (a.name -> initialCounter), a :: s.out)
-    ).out
-      .reverse
+        case None =>
+          UniquenessState(
+            state.counters + (name(x) -> initialCounter),
+            x :: state.out
+          )
+    in.foldLeft(initialState)(operator).out.reverse
+
+  private def ensureUniqueAttachmentNames(
+      in: List[Attachment]
+  ): List[Attachment] =
+    ensureUniqueNames[Attachment, AttachmentName](
+      in,
+      _.name,
+      (n, i) => n.rename(i),
+      (a, n) => a.copy(name = n)
+    )
 
   def inventory(
       node: Node,

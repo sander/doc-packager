@@ -38,3 +38,11 @@ object ContentManagement:
       value.replaceAll(raw"[^a-zA-Z0-9-.]", "-") match
         case "" => empty
         case s  => s
+  extension (n: AttachmentName)
+    def rename(i: Int): AttachmentName =
+      val withExtension = raw"\A(.+)\.(.+)\z".r
+      AttachmentName
+        .from(n.toString match
+          case withExtension(name, extension) => s"$name-$i.$extension"
+          case s                              => s"$s-$i"
+        )
