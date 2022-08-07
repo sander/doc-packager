@@ -16,7 +16,7 @@ import scala.collection.immutable.ListMap
 
 class StepDefinitions extends ScalaDsl with EN:
   val directory: Path =
-    Files.createTempDirectory(Paths.get("target"), getClass.getName)
+    Files.createTempDirectory(Paths.get("/tmp"), getClass.getName)
   var success: Boolean = false
   var traversal: Option[BreadthFirstTraversal] = None
   var error: Option[TraversalError] = None
