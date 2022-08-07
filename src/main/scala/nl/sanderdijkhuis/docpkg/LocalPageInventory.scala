@@ -168,31 +168,13 @@ object LocalPageInventory:
           if f != mainPageName && f.endsWith(pageSuffix)
           n = name(p.getFileName.toString.dropRight(pageSuffix.length))
         yield n -> p
-        val pages = pin
-          .foldLeft(State[Page](counters)) { case (s, (n, p)) =>
-            s.counters.get(n) match
-              case Some(i) =>
-                Iterator
-                  .from(i)
-                  .map(j => j -> rename(n, j + 1))
-                  .find { case (_, n) =>
-                    pin.forall(_._1 != n)
-                  }
-                  .map { case (j, m) =>
-                    State(
-                      s.counters + (n -> (j + 1)),
-                      Page(path + m, Some(p), Nil) :: s.out
-                    )
-                  }
-                  .get
-              case None =>
-                State(
-                  s.counters + (n -> initialCounter),
-                  Page(path + n, Some(p), Nil) :: s.out
-                )
-          }
-          .out
-          .reverse
+        val pages = ensureUniqueNames[(PageName, Path), PageName](
+          pin,
+          _._1,
+          (n, i) => n.rename(i),
+          (n, name) => name -> n._2,
+          UniquenessState(counters)
+        ).out.map { case (name, p) => Page(path + name, Some(p), Nil) }
         root :: directoriesWithContent ++ pages
 
   def apply(path: Path): Outcome =
