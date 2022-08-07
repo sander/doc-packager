@@ -14,9 +14,6 @@ jobs:
       - uses: VirtusLab/scala-cli-setup@313e80b1b8fec6ecb9c058aad0b9f02b4410caa7 # ratchet:VirtusLab/scala-cli-setup@main
         with:
           jvm: temurin:1.17.0.3
-          apps: scala-cli sbtn
+          apps: scala-cli
       - uses: actions/checkout@2541b1294d2704b0964813337f33b291d3f8596b # ratchet:actions/checkout@v3
-      - run: sbt test
-        env:
-          PACKAGE_GITHUB_TOKEN: ${{ secrets.PACKAGE_GITHUB_TOKEN }}
       - run: scala-cli test src/main acceptance
