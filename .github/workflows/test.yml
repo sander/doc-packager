@@ -10,12 +10,13 @@ jobs:
   test:
     runs-on: ubuntu-latest
     steps:
-      - uses: actions/checkout@2541b1294d2704b0964813337f33b291d3f8596b # ratchet:actions/checkout@v3
-      - uses: actions/setup-java@16cca5479d7c6b6843f6a6515640ba33c6501543 # ratchet:actions/setup-java@v3
+      - uses: coursier/cache-action@0cdf229a86211e64f9a576ee6c00cdf662f2554d # ratchet:coursier/cache-action@v6
+      - uses: VirtusLab/scala-cli-setup@313e80b1b8fec6ecb9c058aad0b9f02b4410caa7 # ratchet:VirtusLab/scala-cli-setup@main
         with:
-          java-version: "17"
-          distribution: temurin
-          cache: sbt
+          jvm: temurin:1.17.0.3
+          apps: scala-cli sbtn
+      - uses: actions/checkout@2541b1294d2704b0964813337f33b291d3f8596b # ratchet:actions/checkout@v3
       - run: sbt test
         env:
           PACKAGE_GITHUB_TOKEN: ${{ secrets.PACKAGE_GITHUB_TOKEN }}
+      - run: scala-cli test src/main acceptance

@@ -1,3 +1,5 @@
+//> using testFramework "munit.Framework"
+
 package nl.sanderdijkhuis.docpkg
 
 import nl.sanderdijkhuis.docpkg.ContentManagement.{AttachmentName, PageName}

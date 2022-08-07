@@ -8,6 +8,12 @@
 
 Build this project using [sbt](https://www.scala-sbt.org). Run `sbt tasks` to get an overview of possible tasks.
 
+To run acceptance specs, use [Scala CLI](https://scala-cli.virtuslab.org):
+
+```
+scala-cli test src/main acceptance
+```
+
 ## Maintenance guide
 
 The [scripts](scripts/) directory contains several self-documenting scripts. They can be run using [Scala CLI](https://scala-cli.virtuslab.org).

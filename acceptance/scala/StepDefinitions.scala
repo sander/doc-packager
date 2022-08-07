@@ -1,8 +1,7 @@
-package nl.sanderdijkhuis.docpkg
-
 import io.cucumber.datatable.DataTable
 import io.cucumber.scala.{EN, PendingException, ScalaDsl, Scenario}
 import io.cucumber.scala.Implicits.*
+import nl.sanderdijkhuis.docpkg.{DocumentationPackager, LocalPageInventory}
 import nl.sanderdijkhuis.docpkg.LocalPageInventory.{
   BreadthFirstTraversal,
   InventoryError,
