@@ -99,7 +99,7 @@ class LocalPageInventorySuite extends munit.FunSuite:
     )
   }
 
-  test("inventory with duplicate attachment names".ignore) { // TODO
+  test("inventory with duplicate attachment names") {
     val directory = Node(dir, List(Node(subdir, Nil, List(subpic))), List(pic))
     val attachment1 = Attachment(AttachmentName.get("picture.png").get, pic)
     val attachment2 =

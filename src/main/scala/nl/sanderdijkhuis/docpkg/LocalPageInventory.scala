@@ -69,6 +69,35 @@ object LocalPageInventory:
   val pageSuffix = ".html"
   val mainPageName = s"index$pageSuffix"
 
+  private def ensureUniqueAttachmentNames(
+      in: List[Attachment]
+  ): List[Attachment] =
+    val initialCounter = 1
+    case class State(
+        counters: Map[AttachmentName, Int] = Map.empty,
+        out: List[Attachment] = List.empty
+    )
+    def rename(name: AttachmentName, i: Int): AttachmentName =
+      val withExtension = raw"\A(.+)\.(.+)\z".r
+      AttachmentName.from(name.toString match
+        case withExtension(name, extension) => s"$name-$i.$extension"
+        case s                              => s"$s-$i"
+      )
+    in.foldLeft(State())((s, a) =>
+      s.counters.get(a.name) match
+        case Some(i) =>
+          Iterator
+            .from(i)
+            .map(j => j -> rename(a.name, j + 1))
+            .find { case (_, n) => in.forall(_.name != n) }
+            .map { case (j, n) =>
+              State(s.counters + (a.name -> (j + 1)), a.copy(name = n) :: s.out)
+            }
+            .get
+        case None => State(s.counters + (a.name -> initialCounter), a :: s.out)
+    ).out
+      .reverse
+
   def inventory(
       node: Node,
       path: PagePath = PagePath.root
@@ -96,7 +125,11 @@ object LocalPageInventory:
           f = p.getFileName.toString
           if !f.endsWith(pageSuffix)
         yield Attachment(AttachmentName.from(f), p)
-        val root = Page(path, main, directAttachments ++ deepAttachments)
+        val root = Page(
+          path,
+          main,
+          ensureUniqueAttachmentNames(directAttachments ++ deepAttachments)
+        )
         val pages = for
           p <- files
           f = p.getFileName.toString
