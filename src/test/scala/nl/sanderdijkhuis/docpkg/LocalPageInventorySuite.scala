@@ -36,8 +36,10 @@ class LocalPageInventorySuite extends munit.FunSuite:
   private val subpic = Path.of("dir/subdir/picture.png")
   private val pageWithSpecialCharacter1 = Path.of("dir/fóó.html")
   private val pageWithSpecialCharacter2 = Path.of("dir/fòò.html")
-  private val subdirWithSpecialCharacter = Path.of("dir/föö")
-  private val pageInSubdirWithSpecialCharacter = Path.of("dir/föö/bar.html")
+  private val subdirWithSpecialCharacter1 = Path.of("dir/föö")
+  private val subdirWithSpecialCharacter2 = Path.of("dir/fåå")
+  private val pageInSubdirWithSpecialCharacter1 = Path.of("dir/föö/bar.html")
+  private val pageInSubdirWithSpecialCharacter2 = Path.of("dir/fåå/bar.html")
 
   test("consider an empty directory to be empty") {
     val directory = Node(dir, Nil, Nil)
@@ -139,9 +141,14 @@ class LocalPageInventorySuite extends munit.FunSuite:
         dir,
         List(
           Node(
-            subdirWithSpecialCharacter,
+            subdirWithSpecialCharacter1,
             Nil,
-            List(pageInSubdirWithSpecialCharacter)
+            List(pageInSubdirWithSpecialCharacter1)
+          ),
+          Node(
+            subdirWithSpecialCharacter2,
+            Nil,
+            List(pageInSubdirWithSpecialCharacter2)
           )
         ),
         List(pageWithSpecialCharacter1, pageWithSpecialCharacter2)
@@ -161,16 +168,30 @@ class LocalPageInventorySuite extends munit.FunSuite:
               PagePath(PageName.get("f--").get),
               PageName.get("bar").get
             ),
-          Some(pageInSubdirWithSpecialCharacter),
+          Some(pageInSubdirWithSpecialCharacter1),
           Nil
         ),
         Page(
-          PagePath(PageName.get("f---2").get),
-          Some(pageWithSpecialCharacter1),
+          PagePath(PageName.get("f--2").get),
+          None,
+          Nil
+        ),
+        Page(
+          PagePath
+            .appendTo(
+              PagePath(PageName.get("f--2").get),
+              PageName.get("bar").get
+            ),
+          Some(pageInSubdirWithSpecialCharacter2),
           Nil
         ),
         Page(
           PagePath(PageName.get("f---3").get),
+          Some(pageWithSpecialCharacter1),
+          Nil
+        ),
+        Page(
+          PagePath(PageName.get("f---4").get),
           Some(pageWithSpecialCharacter2),
           Nil
         )
