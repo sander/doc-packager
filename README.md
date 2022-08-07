@@ -9,13 +9,13 @@
 To run acceptance and unit tests, use [Scala CLI](https://scala-cli.virtuslab.org):
 
 ```
-scala-cli test src/main acceptance
+scala-cli test .
 ```
 
 To just run unit tests:
 
 ```
-scala-cli test src/main
+scala-cli test src
 ```
 
 ## Maintenance guide
