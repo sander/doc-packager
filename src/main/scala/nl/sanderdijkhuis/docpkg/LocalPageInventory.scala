@@ -54,9 +54,10 @@ object LocalPageInventory:
       path: Path,
       depth: Depth = Depth.maximum
   ): Either[TraversalError, Node] =
-    val result = Using(Files.list(path))(_.toScala(List)).flatMap(paths =>
-      Try(paths.partition(Files.isDirectory(_)))
-    )
+    val result =
+      Using(Files.list(path))(_.toScala(List).sorted).flatMap(paths =>
+        Try(paths.partition(Files.isDirectory(_)))
+      )
     (result, depth.decrement) match
       case (Success((directories, files)), Some(d)) =>
         directories
