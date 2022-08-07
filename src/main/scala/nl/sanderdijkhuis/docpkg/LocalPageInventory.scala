@@ -5,6 +5,7 @@ import nl.sanderdijkhuis.docpkg.ContentManagement.{
   PageName,
   PagePath
 }
+import nl.sanderdijkhuis.docpkg.LocalPageInventory.Page
 import nl.sanderdijkhuis.docpkg.Traversal.{Error, Result}
 
 import java.io.{File, IOException}
@@ -66,13 +67,13 @@ object LocalPageInventory:
       case (Failure(e: TraversalError), _) => Left(e)
       case (Failure(e), _)                 => throw e
 
-  val pageSuffix = ".html"
-  val mainPageName = s"index$pageSuffix"
+  private val pageSuffix = ".html"
+  private val mainPageName = s"index$pageSuffix"
+  private val initialCounter = 1
 
   private def ensureUniqueAttachmentNames(
       in: List[Attachment]
   ): List[Attachment] =
-    val initialCounter = 1
     case class State(
         counters: Map[AttachmentName, Int] = Map.empty,
         out: List[Attachment] = List.empty
@@ -102,7 +103,13 @@ object LocalPageInventory:
       node: Node,
       path: PagePath = PagePath.root
   ): BreadthFirstTraversal =
+    case class State(
+        counters: Map[PageName, Int] = Map.empty,
+        out: List[Page] = List.empty
+    )
     def name(s: String): PageName = PageName.from(s)
+    def rename(name: PageName, i: Int): PageName =
+      PageName.from(s"${name.toString}-$i")
     extension (p: PagePath)
       @targetName("appendTo")
       def +(n: PageName): PagePath = PagePath.appendTo(p, n)
@@ -130,12 +137,37 @@ object LocalPageInventory:
           main,
           ensureUniqueAttachmentNames(directAttachments ++ deepAttachments)
         )
-        val pages = for
+        val pin = for
           p <- files
           f = p.getFileName.toString
           if f != mainPageName && f.endsWith(pageSuffix)
           n = name(p.getFileName.toString.dropRight(pageSuffix.length))
-        yield Page(path + n, Some(p), Nil)
+        yield n -> p
+        val pages = pin
+          .foldLeft(State()) { case (s, (n, p)) =>
+            s.counters.get(n) match
+              case Some(i) =>
+                Iterator
+                  .from(i)
+                  .map(j => j -> rename(n, j + 1))
+                  .find { case (_, n) =>
+                    pin.forall(_._1 != n)
+                  }
+                  .map { case (j, n) =>
+                    State(
+                      s.counters + (n -> (j + 1)),
+                      Page(path + n, Some(p), Nil) :: s.out
+                    )
+                  }
+                  .get
+              case None =>
+                State(
+                  s.counters + (n -> initialCounter),
+                  Page(path + n, Some(p), Nil) :: s.out
+                )
+          }
+          .out
+          .reverse
         root :: directoriesWithContent ++ pages
 
   def apply(path: Path): Outcome =

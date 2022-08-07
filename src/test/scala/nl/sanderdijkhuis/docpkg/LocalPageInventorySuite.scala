@@ -112,7 +112,7 @@ class LocalPageInventorySuite extends munit.FunSuite:
     )
   }
 
-  test("inventory with duplicate page names".ignore) {
+  test("inventory with duplicate page names") {
     val directory =
       Node(dir, Nil, List(pageWithSpecialCharacter1, pageWithSpecialCharacter2))
     assertEquals(
