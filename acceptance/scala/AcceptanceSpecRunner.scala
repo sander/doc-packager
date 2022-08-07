@@ -1,4 +1,4 @@
-//> using lib "com.github.sbt:junit-interface:0.13.2"
+//> using lib "com.github.sbt:junit-interface:0.13.3"
 //> using lib "io.cucumber::cucumber-scala::8.6.0"
 //> using lib "io.cucumber:cucumber-junit:7.5.0"
 //> using lib "junit:junit:4.13.2"
