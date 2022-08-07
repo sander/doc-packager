@@ -6,8 +6,6 @@
 
 ## How to use it
 
-Build this project using [sbt](https://www.scala-sbt.org). Run `sbt tasks` to get an overview of possible tasks.
-
 To run acceptance and unit tests, use [Scala CLI](https://scala-cli.virtuslab.org):
 
 ```
