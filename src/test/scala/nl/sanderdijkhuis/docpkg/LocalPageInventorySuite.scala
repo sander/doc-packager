@@ -30,12 +30,14 @@ class LocalPageInventorySuite extends munit.FunSuite:
   private val dir = Path.of("dir")
   private val index = Path.of("dir/index.html")
   private val foo = Path.of("dir/foo.html")
-  private val subdir = Path.of("subdir")
-  private val bar = Path.of("subdir/bar.html")
+  private val subdir = Path.of("dir/subdir")
+  private val bar = Path.of("dir/subdir/bar.html")
   private val pic = Path.of("dir/picture.png")
   private val subpic = Path.of("dir/subdir/picture.png")
   private val pageWithSpecialCharacter1 = Path.of("dir/fóó.html")
   private val pageWithSpecialCharacter2 = Path.of("dir/fòò.html")
+  private val subdirWithSpecialCharacter = Path.of("dir/föö")
+  private val pageInSubdirWithSpecialCharacter = Path.of("dir/föö/bar.html")
 
   test("consider an empty directory to be empty") {
     val directory = Node(dir, Nil, Nil)
@@ -110,7 +112,7 @@ class LocalPageInventorySuite extends munit.FunSuite:
     )
   }
 
-  test("inventory with duplicate page names".ignore) { // TODO
+  test("inventory with duplicate page names".ignore) {
     val directory =
       Node(dir, Nil, List(pageWithSpecialCharacter1, pageWithSpecialCharacter2))
     assertEquals(
@@ -124,6 +126,51 @@ class LocalPageInventorySuite extends munit.FunSuite:
         ),
         Page(
           PagePath(PageName.get("f---2").get),
+          Some(pageWithSpecialCharacter2),
+          Nil
+        )
+      )
+    )
+  }
+
+  test("inventory with duplicate page and directory names".ignore) {
+    val directory =
+      Node(
+        dir,
+        List(
+          Node(
+            subdirWithSpecialCharacter,
+            Nil,
+            List(pageInSubdirWithSpecialCharacter)
+          )
+        ),
+        List(pageWithSpecialCharacter1, pageWithSpecialCharacter2)
+      )
+    assertEquals(
+      LocalPageInventory.inventory(directory).toList,
+      List(
+        Page(PagePath.root, None, Nil),
+        Page(
+          PagePath(PageName.get("f--").get),
+          None,
+          Nil
+        ),
+        Page(
+          PagePath
+            .appendTo(
+              PagePath(PageName.get("f--").get),
+              PageName.get("bar").get
+            ),
+          Some(pageInSubdirWithSpecialCharacter),
+          Nil
+        ),
+        Page(
+          PagePath(PageName.get("f---2").get),
+          Some(pageWithSpecialCharacter1),
+          Nil
+        ),
+        Page(
+          PagePath(PageName.get("f---3").get),
           Some(pageWithSpecialCharacter2),
           Nil
         )
