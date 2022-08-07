@@ -11,6 +11,7 @@ import nl.sanderdijkhuis.docpkg.Traversal.{Error, Result}
 import java.io.{File, IOException}
 import java.nio.file.{Files, NotDirectoryException, Path}
 import scala.annotation.targetName
+import scala.collection.immutable.ListMap
 import scala.util.{Failure, Success, Try, Using}
 import scala.jdk.StreamConverters.*
 
@@ -71,75 +72,55 @@ object LocalPageInventory:
   private val mainPageName = s"index$pageSuffix"
   private val initialCounter = 1
 
-  private case class UniquenessState[T, N](
+  private case class UniquenessState[N, T](
       counters: Map[N, Int] = Map.empty[N, Int],
-      out: List[T] = List.empty
+      out: List[(N, T)] = List.empty
   )
-  private def ensureUniqueNames[T, N](
-      in: List[T],
-      name: T => N,
+  private def ensureUniqueNames[N, T](
+      in: List[(N, T)],
       rename: (N, Int) => N,
-      changeName: (T, N) => T,
-      initialState: UniquenessState[T, N] = UniquenessState[T, N]()
-  ): UniquenessState[T, N] =
-    val names = in.map(name)
-    def operator(state: UniquenessState[T, N], x: T): UniquenessState[T, N] =
-      state.counters.get(name(x)) match
+      initialState: UniquenessState[N, T] = UniquenessState[N, T]()
+  ): UniquenessState[N, T] =
+    type S = UniquenessState[N, T]
+    val names = in.map(_._1).toSet
+    def operator(state: S, x: (N, T)): S =
+      val (name, value) = x
+      state.counters.get(name) match
         case Some(i) =>
           Iterator
             .from(i)
-            .map(j => j -> rename(name(x), j + 1))
-            .find { case (_, n) =>
-              !names.contains(n)
-            }
-            .map { case (j, n) =>
-              UniquenessState(
-                state.counters + (name(x) -> (j + 1)),
-                changeName(x, n) :: state.out
+            .map(j => j -> rename(name, j + 1))
+            .find((_, n) => !names.contains(n))
+            .map((j, n) =>
+              state.copy(
+                counters = state.counters + (name -> (j + 1)),
+                out = (n -> value) :: state.out
               )
-            }
+            )
             .get
         case None =>
-          UniquenessState(
-            state.counters + (name(x) -> initialCounter),
-            x :: state.out
+          state.copy(
+            counters = state.counters + (name -> initialCounter),
+            out = (name -> value) :: state.out
           )
-    val UniquenessState(counters, out) = in.foldLeft(initialState)(operator)
+    val S(counters, out) = in.foldLeft(initialState)(operator)
     UniquenessState(counters, out.reverse)
-
-  private def ensureUniqueAttachmentNames(
-      in: List[Attachment]
-  ): List[Attachment] =
-    ensureUniqueNames[Attachment, AttachmentName](
-      in,
-      _.name,
-      (n, i) => n.rename(i),
-      (a, n) => a.copy(name = n)
-    ).out
 
   def inventory(
       node: Node,
       path: PagePath = PagePath.root
   ): BreadthFirstTraversal =
-    case class State[T](
-        counters: Map[PageName, Int] = Map.empty,
-        out: List[T] = List.empty
-    )
-    def name(s: String): PageName = PageName.from(s)
-    def rename(name: PageName, i: Int): PageName =
-      PageName.from(s"${name.toString}-$i")
-    extension (p: PagePath)
-      @targetName("appendTo")
-      def +(n: PageName): PagePath = PagePath.appendTo(p, n)
     val UniquenessState(counters, directories) =
-      ensureUniqueNames[(PageName, Node), PageName](
-        node.directories.map(n => name(n.path.getFileName.toString) -> n),
-        _._1,
-        (n, i) => n.rename(i),
-        (n, name) => name -> n._2
+      ensureUniqueNames(
+        node.directories.map(n =>
+          PageName.from(n.path.getFileName.toString) -> n
+        ),
+        (n, i) => n.rename(i)
       )
     (
-      directories.flatMap { case (name, node) => inventory(node, path + name) },
+      directories.flatMap { case (name, node) =>
+        inventory(node, PagePath.appendTo(path, name))
+      },
       node.files
     ) match
       case (Nil, Nil) => Nil
@@ -157,24 +138,28 @@ object LocalPageInventory:
           f = p.getFileName.toString
           if !f.endsWith(pageSuffix)
         yield Attachment(AttachmentName.from(f), p)
+        val attachments = ensureUniqueNames(
+          (directAttachments ++ deepAttachments).map(a => a.name -> a),
+          (n, i) => n.rename(i)
+        ).out.map { case (n, a) => a.copy(name = n) }
         val root = Page(
           path,
           main,
-          ensureUniqueAttachmentNames(directAttachments ++ deepAttachments)
+          attachments
         )
         val pin = for
           p <- files
           f = p.getFileName.toString
           if f != mainPageName && f.endsWith(pageSuffix)
-          n = name(p.getFileName.toString.dropRight(pageSuffix.length))
+          n = PageName.from(p.getFileName.toString.dropRight(pageSuffix.length))
         yield n -> p
-        val pages = ensureUniqueNames[(PageName, Path), PageName](
+        val pages = ensureUniqueNames(
           pin,
-          _._1,
           (n, i) => n.rename(i),
-          (n, name) => name -> n._2,
           UniquenessState(counters)
-        ).out.map { case (name, p) => Page(path + name, Some(p), Nil) }
+        ).out.map { case (name, p) =>
+          Page(PagePath.appendTo(path, name), Some(p), Nil)
+        }
         root :: directoriesWithContent ++ pages
 
   def apply(path: Path): Outcome =
