@@ -1,6 +1,6 @@
 Feature: Local inventory
 
-  @planned
+  @wip
   Example: Site with attachments
     Given a directory with contents
       | File path             |
