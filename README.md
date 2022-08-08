@@ -15,7 +15,7 @@ scala-cli test .
 To just run unit tests:
 
 ```
-scala-cli test src
+scala-cli test --test-framework munit.Framework .
 ```
 
 ## Maintenance guide
