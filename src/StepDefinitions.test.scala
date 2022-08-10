@@ -1,7 +1,7 @@
 import io.cucumber.datatable.DataTable
 import io.cucumber.scala.{EN, PendingException, ScalaDsl, Scenario}
 import io.cucumber.scala.Implicits.*
-import docpkg.{DocumentationPackager, LocalPageInventory}
+import docpkg.LocalPageInventory
 import docpkg.LocalPageInventory.{
   BreadthFirstTraversal,
   InventoryError,
@@ -36,12 +36,6 @@ class StepDefinitions extends ScalaDsl with EN:
       .forEach(_.delete)
   }
 
-  When("""I launch the application""") { () =>
-    if (DocumentationPackager.run() == ()) success = true
-  }
-  Then("""it exits successfully""") { () =>
-    assert(success)
-  }
   Given("""a directory with contents""") { (dataTable: DataTable) =>
     for f <- dataTable.asScalaMaps
         .map(_("File path").get)
