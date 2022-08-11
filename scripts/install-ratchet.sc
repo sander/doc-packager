@@ -26,7 +26,7 @@ val version = "0.2.3"
 val url = URL(
   s"https://github.com/sethvargo/ratchet/releases/download/v$version/ratchet_${version}_$architecture.tar.gz"
 )
-val directory = File("target/ratchet")
+val directory = File(".ratchet")
 val download = File(directory, "download.tar.gz")
 val executable = "ratchet"
 

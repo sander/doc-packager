@@ -3,7 +3,7 @@
 import java.io.{File, IOException}
 import sys.process.*
 
-val ratchet = "target/ratchet/ratchet"
+val ratchet = ".ratchet/ratchet"
 val voidLogger = ProcessLogger(_ => (), _ => ())
 
 try ratchet.!(voidLogger)
