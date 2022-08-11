@@ -15,6 +15,7 @@ jobs:
         with:
           jvm: temurin:1.17.0.3
           apps: scala-cli
+          scala-cli-version: "0.1.11"
       - uses: actions/checkout@2541b1294d2704b0964813337f33b291d3f8596b # ratchet:actions/checkout@v3
       - run: scala-cli scripts/install-ratchet.sc
       - run: scala-cli scripts/check-workflow-dependencies.sc
