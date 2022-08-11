@@ -9,7 +9,7 @@ jobs:
   scala-steward:
     runs-on: ubuntu-latest
     steps:
-      - uses: scala-steward-org/scala-steward-action@6437c4b9167d16f81deef471dd4c69451edfda2e # ratchet:scala-steward-org/scala-steward-action@v2
+      - uses: scala-steward-org/scala-steward-action@f8badbe3d660cf890a08da7ea2cd4f5550c7084f # ratchet:scala-steward-org/scala-steward-action@v2
         with:
           github-token: ${{ secrets.REPO_GITHUB_TOKEN }}
         env:
