@@ -1,7 +1,6 @@
 package docpkg.inventory
 
 import docpkg.ContentManagement.{AttachmentName, PageName, PagePath}
-import docpkg.Traversal.{Error, Result}
 
 import java.io.{File, IOException}
 import java.nio.file.{Files, NotDirectoryException, Path}
@@ -25,8 +24,6 @@ object InventoryError:
   case object NotADirectory extends InventoryError
   case class InvalidAttachmentNameError(path: Path) extends InventoryError
   case class InvalidPageNameError(path: Path) extends InventoryError
-
-type Outcome = Result[InventoryError, BreadthFirstTraversal]
 
 case class Node(path: Path, directories: List[Node], files: List[Path])
 
