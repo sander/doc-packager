@@ -38,8 +38,8 @@ case class MaximumDepthReached(path: Path)
       s"Maximum traversal depth reached while traversing $path"
     )
 
-type TraversalError = NotDirectoryException | SecurityException |
-  IOException | MaximumDepthReached
+type TraversalError = NotDirectoryException | SecurityException | IOException |
+  MaximumDepthReached
 
 def traverseDepthFirst(
     path: Path,
@@ -99,8 +99,8 @@ private def ensureUniqueNames[N, T](
   UniquenessState(counters, out.reverse)
 
 def inventory(
-               node: Node,
-               path: PagePath = PagePath.root
+    node: Node,
+    path: PagePath = PagePath.root
 ): BreadthFirstTraversal =
   val UniquenessState(counters, directories) =
     ensureUniqueNames(
