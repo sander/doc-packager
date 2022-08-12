@@ -1,7 +1,7 @@
 package docpkg
 
 import docpkg.ContentManagement.{AttachmentName, PageName, PagePath}
-import docpkg.LocalPageInventory.{Attachment, InventoryError, Node, Page}
+import docpkg.inventory.*
 
 import java.nio.file.{Files, NotDirectoryException, Path}
 
@@ -14,7 +14,7 @@ class LocalPageInventorySuite extends munit.FunSuite:
     )
 
   temporaryFile.test("reject files instead of directories") { path =>
-    val result = LocalPageInventory.traverseDepthFirst(path)
+    val result = traverseDepthFirst(path)
     intercept[NotDirectoryException](result.toTry.get)
   }
 
@@ -36,13 +36,13 @@ class LocalPageInventorySuite extends munit.FunSuite:
 
   test("consider an empty directory to be empty") {
     val directory = Node(dir, Nil, Nil)
-    assertEquals(LocalPageInventory.inventory(directory).toList, Nil)
+    assertEquals(inventory(directory).toList, Nil)
   }
 
   test("inventory a directory with one page") {
     val directory = Node(dir, Nil, List(foo))
     assertEquals(
-      LocalPageInventory.inventory(directory).toList,
+      inventory(directory).toList,
       List(
         Page(PagePath.root, None, Nil),
         Page(PagePath(PageName.get("foo").get), Some(foo), Nil)
@@ -53,14 +53,14 @@ class LocalPageInventorySuite extends munit.FunSuite:
   test("inventory a directory with one main page") {
     val directory = Node(dir, Nil, List(index))
     assertEquals(
-      LocalPageInventory.inventory(directory).toList,
+      inventory(directory).toList,
       List(Page(PagePath.root, Some(index), Nil))
     )
   }
 
   test("inventory a directory with an empty subdirectory") {
     val directory = Node(dir, List(Node(subdir, Nil, Nil)), Nil)
-    assertEquals(LocalPageInventory.inventory(directory).toList, Nil)
+    assertEquals(inventory(directory).toList, Nil)
   }
 
   test("inventory a directory with a subdirectory with one page") {
@@ -68,7 +68,7 @@ class LocalPageInventorySuite extends munit.FunSuite:
     def name(s: String) = PageName.get(s).get
     def path(s: String) = PagePath(name(s))
     assertEquals(
-      LocalPageInventory.inventory(directory).toList,
+      inventory(directory).toList,
       List(
         Page(PagePath.root, None, Nil),
         Page(path("subdir"), None, Nil),
@@ -81,7 +81,7 @@ class LocalPageInventorySuite extends munit.FunSuite:
     val directory = Node(dir, Nil, List(pic))
     val attachment = Attachment(AttachmentName.get("picture.png").get, pic)
     assertEquals(
-      LocalPageInventory.inventory(directory).toList,
+      inventory(directory).toList,
       List(Page(PagePath.root, None, List(attachment)))
     )
   }
@@ -91,7 +91,7 @@ class LocalPageInventorySuite extends munit.FunSuite:
     val attachment =
       Attachment(AttachmentName.get("picture.png").get, subpic)
     assertEquals(
-      LocalPageInventory.inventory(directory).toList,
+      inventory(directory).toList,
       List(Page(PagePath.root, None, List(attachment)))
     )
   }
@@ -102,7 +102,7 @@ class LocalPageInventorySuite extends munit.FunSuite:
     val attachment2 =
       Attachment(AttachmentName.get("picture-2.png").get, subpic)
     assertEquals(
-      LocalPageInventory.inventory(directory).toList,
+      inventory(directory).toList,
       List(Page(PagePath.root, None, List(attachment1, attachment2)))
     )
   }
@@ -111,7 +111,7 @@ class LocalPageInventorySuite extends munit.FunSuite:
     val directory =
       Node(dir, Nil, List(pageWithSpecialCharacter1, pageWithSpecialCharacter2))
     assertEquals(
-      LocalPageInventory.inventory(directory).toList,
+      inventory(directory).toList,
       List(
         Page(PagePath.root, None, Nil),
         Page(
@@ -147,7 +147,7 @@ class LocalPageInventorySuite extends munit.FunSuite:
         List(pageWithSpecialCharacter1, pageWithSpecialCharacter2)
       )
     assertEquals(
-      LocalPageInventory.inventory(directory).toList,
+      inventory(directory).toList,
       List(
         Page(PagePath.root, None, Nil),
         Page(
@@ -203,7 +203,7 @@ class LocalPageInventorySuite extends munit.FunSuite:
       PagePath.appendTo(subdirPath, PageName.get("subsubdir").get)
     val pagePath = PagePath.appendTo(subsubdirPath, PageName.get("page").get)
     assertEquals(
-      LocalPageInventory.inventory(directory).toList,
+      inventory(directory).toList,
       List(
         Page(PagePath.root, None, Nil),
         Page(subdirPath, None, Nil),

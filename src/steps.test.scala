@@ -1,12 +1,7 @@
 import io.cucumber.datatable.DataTable
 import io.cucumber.scala.{EN, PendingException, ScalaDsl, Scenario}
 import io.cucumber.scala.Implicits.*
-import docpkg.LocalPageInventory
-import docpkg.LocalPageInventory.{
-  BreadthFirstTraversal,
-  InventoryError,
-  TraversalError
-}
+import docpkg.inventory.*
 import munit.Assertions.*
 
 import java.io.File
@@ -45,10 +40,10 @@ class StepDefinitions extends ScalaDsl with EN:
       assert(f.createNewFile())
   }
   When("""I generate a local inventory""") { () =>
-    val result = LocalPageInventory.traverseDepthFirst(directory)
+    val result = traverseDepthFirst(directory)
     assertEquals(result.left.toOption, None)
     traversal = Some(
-      LocalPageInventory.inventory(result.getOrElse(throw new Exception()))
+      inventory(result.getOrElse(throw new Exception()))
     )
   }
   Then("""the inventory contains the following pages:""") {
@@ -91,7 +86,7 @@ class StepDefinitions extends ScalaDsl with EN:
   }
   Given("I ask to generate a local inventory for a file") { () =>
     val file = Files.createTempFile(directory, "file", "txt")
-    error = LocalPageInventory.traverseDepthFirst(file).left.toOption
+    error = traverseDepthFirst(file).left.toOption
   }
   Then("I get an error that the provided path is not a directory") { () =>
     intercept[NotDirectoryException](error.toLeft(None).toTry.get)
