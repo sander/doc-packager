@@ -2,7 +2,7 @@
 
 package docpkg
 
-import docpkg.ContentManagement.{AttachmentName, PageName}
+import docpkg.content.*
 
 class ContentManagementSuite extends munit.FunSuite:
 

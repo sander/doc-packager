@@ -1,6 +1,6 @@
 package docpkg
 
-import docpkg.ContentManagement.{AttachmentName, PageName, PagePath}
+import docpkg.content.*
 import docpkg.inventory.*
 
 import java.nio.file.{Files, NotDirectoryException, Path}

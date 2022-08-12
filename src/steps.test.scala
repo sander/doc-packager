@@ -1,6 +1,7 @@
 import io.cucumber.datatable.DataTable
 import io.cucumber.scala.{EN, PendingException, ScalaDsl, Scenario}
 import io.cucumber.scala.Implicits.*
+import docpkg.content.*
 import docpkg.inventory.*
 import munit.Assertions.*
 

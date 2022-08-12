@@ -1,5 +1,6 @@
 //> using file "../src"
 
+import docpkg.content.*
 import docpkg.inventory.*
 
 if args.length != 1 then
