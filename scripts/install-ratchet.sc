@@ -1,5 +1,3 @@
-#!/usr/bin/env -S scala-cli shebang
-
 import java.io.{ByteArrayOutputStream, File}
 import java.net.URL
 import java.nio.file.Files

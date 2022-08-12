@@ -1,5 +1,3 @@
-#!/usr/bin/env -S scala-cli shebang
-
 //> using file "../src"
 
 if args.length != 1 then

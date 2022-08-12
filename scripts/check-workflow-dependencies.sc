@@ -1,5 +1,3 @@
-#!/usr/bin/env -S scala-cli shebang
-
 import java.io.{File, IOException}
 import sys.process.*
 
