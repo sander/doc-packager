@@ -4,7 +4,7 @@
 //> using lib "junit:junit:4.13.2"
 //> using lib "org.scalameta::munit::0.7.29"
 //> using testFramework "com.novocode.junit.JUnitFramework"
-//> using resourceDirs "../resources", "../features"
+//> using resourceDirs "../features"
 
 import io.cucumber.junit.{Cucumber, CucumberOptions}
 import org.junit.runner.RunWith
