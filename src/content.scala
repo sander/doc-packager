@@ -57,18 +57,19 @@ object Id:
 
 opaque type Title = String
 extension (t: Title) def toString: String = t
-object PageTitle:
+object Title:
   def parse(value: String): Option[Title] = Some(value)
 
 opaque type Body = String
 extension (b: Body) @targetName("bodyValue") def value: String = b
-object PageBody:
+object Body:
   def parse(value: String): Option[Body] = Some(value)
 
 opaque type Version = Int
 extension (v: Version)
   def increment: Version = v + 1
   def value: Int = v
-def Version(value: Int): Option[Version] = Some(value)
+object Version:
+  def from(value: Int): Option[Version] = Some(value)
 
 case class Attachment(name: AttachmentName, file: Path)
