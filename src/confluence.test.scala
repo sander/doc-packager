@@ -50,14 +50,10 @@ class ConfluenceSuite extends munit.FunSuite:
   }
 
   test("creates and deletes pages".tag(integration)) {
-    val value = UUID.randomUUID().toString()
-    val title = Title.parse(value).get
+    val title = Title.parse(UUID.randomUUID().toString()).get
     val body = Body.parse("").get
-    val create = createPage(space, title, body)
 
-    val id = create.send(backend).body
+    val id = createPage(space, title, body).send(backend).body
 
-    val delete = deletePage(id)
-
-    delete.send(backend)
+    deletePage(id).send(backend)
   }
