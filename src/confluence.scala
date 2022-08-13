@@ -56,3 +56,14 @@ def getSpaceProperty(s: SpaceKey, p: PropertyKey): Request[Option[String]] =
           json.hcursor.downField("value").as[Option[String]]
       }.getRight
     )
+
+def updateSpaceProperty(s: SpaceKey, k: PropertyKey, v: String): Request[Unit] =
+  request
+    .post(uri"$prefix/space/$s/property")
+    .body(
+      Json.obj(
+        "key" -> Json.fromString(k.toString),
+        "value" -> Json.fromString(v)
+      )
+    )
+    .response(asJson[Json].getRight.map(_.hcursor.as[Unit]))
