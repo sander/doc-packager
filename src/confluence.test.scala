@@ -1,11 +1,15 @@
 //> using testFramework "munit.Framework"
 //> using lib "com.softwaremill.sttp.client3::core:3.7.4"
+//> using lib "com.softwaremill.sttp.client3::scribe-backend:3.7.4"
+//> using lib "com.outr::scribe:3.10.2"
 
 package docpkg
 
 import docpkg.confluence.*
+import docpkg.content.*
 
 import sttp.client3.*
+import sttp.client3.logging.scribe.ScribeLoggingBackend
 
 import java.util.UUID
 
@@ -15,11 +19,11 @@ class ConfluenceSuite extends munit.FunSuite:
 
   given Access = Access(
     sys.env.get("ATLASSIAN_API_TOKEN").flatMap(Token.from).get,
-    Domain.from("sanderqd.atlassian.net").get,
+    Domain.from("sanderd.atlassian.net").get,
     User.from("mail+docpkg-ci@sanderdijkhuis.nl").get
   )
 
-  val backend = HttpClientSyncBackend()
+  val backend = ScribeLoggingBackend(HttpClientSyncBackend())
   val space = SpaceKey.parse("DOCPKGIT").get
 
   test("gets a space property".tag(integration)) {
@@ -43,4 +47,17 @@ class ConfluenceSuite extends munit.FunSuite:
     val response = get.send(backend).body
 
     assert(response.contains(value))
+  }
+
+  test("creates and deletes pages".tag(integration)) {
+    val value = UUID.randomUUID().toString()
+    val title = Title.parse(value).get
+    val body = Body.parse("").get
+    val create = createPage(space, title, body)
+
+    val id = create.send(backend).body
+
+    val delete = deletePage(id)
+
+    delete.send(backend)
   }

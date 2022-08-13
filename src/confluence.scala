@@ -4,6 +4,8 @@
 
 package docpkg.confluence
 
+import docpkg.content.*
+
 import io.circe.*
 import io.circe.syntax.*
 import sttp.client3.*
@@ -67,3 +69,31 @@ def updateSpaceProperty(s: SpaceKey, k: PropertyKey, v: String): Request[Unit] =
       )
     )
     .response(asJson[Json].getRight.map(_.hcursor.as[Unit]))
+
+def createPage(s: SpaceKey, t: Title, b: Body): Request[Id] =
+  request
+    .post(uri"$prefix/content")
+    .body(
+      Json.obj(
+        "title" -> Json.fromString(t.toString),
+        "type" -> Json.fromString("page"),
+        "space" -> Json.obj("key" -> Json.fromString(s.toString)),
+        "ancestors" -> Json.arr(Json.obj("id" -> Json.fromString("4882495"))),
+        "body" -> Json.obj(
+          "storage" -> Json.obj(
+            "representation" -> Json.fromString("storage"),
+            "value" -> Json.fromString(b.value)
+          )
+        )
+      )
+    )
+    .response(
+      asJson[Json].getRight
+        .map(r => r.hcursor.downField("id").as[String].map(_.asInstanceOf[Id]))
+        .getRight
+    )
+
+def deletePage(id: Id): Request[Unit] =
+  request
+    .delete(uri"$prefix/content/$id")
+    .response(asString.getRight.map(_ => ()))
