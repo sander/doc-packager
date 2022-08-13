@@ -9,7 +9,6 @@ import scala.collection.immutable.ListMap
 import scala.util.{Failure, Success, Try, Using}
 import scala.jdk.StreamConverters.*
 
-case class Attachment(name: AttachmentName, file: Path)
 case class Page(
     path: PagePath,
     content: Option[Path],
