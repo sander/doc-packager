@@ -12,6 +12,9 @@ import sttp.client3.*
 import sttp.client3.logging.scribe.ScribeLoggingBackend
 
 import java.util.UUID
+import java.nio.charset.StandardCharsets
+import java.nio.file.{Files, Paths}
+import scala.io.Source
 
 class ConfluenceSuite extends munit.FunSuite:
 
@@ -23,10 +26,10 @@ class ConfluenceSuite extends munit.FunSuite:
     User.from("mail+docpkg-ci@sanderdijkhuis.nl").get
   )
 
-  val backend = ScribeLoggingBackend(HttpClientSyncBackend())
+  val backend = HttpClientSyncBackend()
   val space = SpaceKey.parse("DOCPKGIT").get
 
-  test("gets a space property".tag(integration)) {
+  test("gets a space property".tag(integration).ignore) {
     val property = PropertyKey.parse("non-existent-test-property").get
     val request = getSpaceProperty(space, property)
 
@@ -56,4 +59,24 @@ class ConfluenceSuite extends munit.FunSuite:
     val id = createPage(space, title, body).send(backend).body
 
     deletePage(id).send(backend)
+  }
+
+  test("uploads and gets attachments".tag(integration)) {
+    val title = Title.parse(UUID.randomUUID().toString()).get
+    val body = Body.parse("").get
+    val attachmentName = AttachmentName.get("attachment.txt").get
+    val attachmentData = "Hello, World!\n".getBytes(StandardCharsets.UTF_8)
+    val path = Files.createTempFile(Paths.get("/tmp"), "attachment", ".txt")
+    val attachment = Attachment(attachmentName, path)
+    val comment = Comment.from("test-comment").get
+
+    Files.write(path, attachmentData)
+    val contentId = createPage(space, title, body).send(backend).body
+    val attachmentId = attach(contentId, attachment, comment).send(backend).body
+    Files.delete(path)
+    val out = getAttachment(contentId, attachmentId).send(backend).body
+
+    assertEquals(out.toSeq, attachmentData.toSeq)
+
+    deletePage(contentId).send(backend)
   }

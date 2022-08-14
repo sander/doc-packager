@@ -26,6 +26,14 @@ opaque type User = String
 object User:
   def from(value: String): Option[User] = Some(value)
 
+opaque type Comment = String
+object Comment:
+  def from(value: String): Option[Comment] = Some(value)
+
+opaque type AttachmentId = String
+object AttachmentId:
+  def from(value: String): Option[AttachmentId] = Some(value)
+
 case class Access(token: Token, domainName: Domain, userName: User)
 
 private val request: Access ?=> PartialRequest[Either[String, String], Any] =
@@ -97,3 +105,28 @@ def deletePage(id: Id): Request[Unit] =
   request
     .delete(uri"$prefix/content/$id")
     .response(asString.getRight.map(_ => ()))
+
+def attach(id: Id, a: Attachment, c: Comment): Request[AttachmentId] =
+  request
+    .multipartBody(
+      multipartFile("file", a.file).fileName(a.name.toString),
+      multipart("comment", c)
+    )
+    .put(uri"$prefix/content/$id/child/attachment")
+    .response(
+      asJson[Json].getRight
+        .map(r =>
+          r.hcursor
+            .downField("results")
+            .downArray
+            .downField("id")
+            .as[String]
+            .map(_.asInstanceOf[AttachmentId])
+        )
+        .getRight
+    )
+
+def getAttachment(c: Id, a: AttachmentId): Request[Array[Byte]] = request
+  .get(uri"$prefix/content/$c/child/attachment/$a/download")
+  .response(asByteArrayAlways)
+  .followRedirects(true)
