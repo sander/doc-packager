@@ -14,7 +14,6 @@ import sttp.client3.logging.scribe.ScribeLoggingBackend
 import java.util.UUID
 import java.nio.charset.StandardCharsets
 import java.nio.file.{Files, Paths}
-import scala.io.Source
 
 class ConfluenceSuite extends munit.FunSuite:
 
