@@ -267,3 +267,17 @@ def getPagesWithProperty(
         )
         .getRight
     )
+
+def appendTo(id: Id, target: Id): Request[Unit] =
+  request.put(uri"$prefix/content/$id/move/append/$target").response(ignore)
+
+def createProperty(id: Id, k: PropertyKey, v: List[String]): Request[Unit] =
+  request
+    .post(uri"$prefix/content/$id/property")
+    .body(
+      Json.obj(
+        "key" -> Json.fromString(k.toString),
+        "value" -> Json.arr(v.map(v => Json.fromString(v)): _*)
+      )
+    )
+    .response(ignore)

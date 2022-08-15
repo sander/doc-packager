@@ -101,3 +101,5 @@ class ConfluenceSuite extends munit.FunSuite:
     val key = PropertyKey.parse("test-key").get
     val response = getPagesWithProperty(key).send(backend).body
   }
+
+  // TODO: test appendTo, createProperty
