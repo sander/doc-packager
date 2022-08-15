@@ -94,3 +94,10 @@ class ConfluenceSuite extends munit.FunSuite:
 
     deletePage(id).send(backend)
   }
+
+  test("lists pages without throwing an error".tag(integration)) {
+    // TODO: test behavior
+
+    val key = PropertyKey.parse("test-key").get
+    val response = getPagesWithProperty(key).send(backend).body
+  }

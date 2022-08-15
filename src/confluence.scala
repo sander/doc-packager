@@ -38,6 +38,19 @@ case class Access(token: Token, domainName: Domain, userName: User)
 
 case class UpdatablePageContent(version: Version, title: Title, body: Body)
 
+case class RemoteContent(
+    id: Id,
+    attachments: Map[AttachmentName, AttachmentId]
+)
+
+case class GetContentResponse(
+    next: Option[Request[GetContentResponse]],
+    inventory: Map[PagePath, RemoteContent],
+    start: Int,
+    limit: Int,
+    size: Int
+)
+
 private val request: Access ?=> PartialRequest[Either[String, String], Any] =
   val Access(value, _, userName) = summon[Access]
   val credential =
@@ -176,3 +189,81 @@ def updatePage(c: Id, v: Version, t: Title, b: Body): Request[Unit] =
       )
     )
     .response(ignore)
+
+def getPagesWithProperty(
+    p: PropertyKey,
+    offset: Int = 0
+): Request[GetContentResponse] =
+  val lim = 50
+  val decodeItem: Decoder[Option[(PagePath, RemoteContent)]] =
+    Decoder.instance(a =>
+      for
+        id <- a.downField("id").as[String]
+        path <- a
+          .downField("metadata")
+          .downField("properties")
+          .downField(p.toString)
+          .downField("value")
+          .as[Option[Array[String]]]
+        attachments <- a
+          .downField("children")
+          .downField("attachment")
+          .downField("results")
+          .as[Option[List[(String, String)]]](
+            Decoder.decodeOption(
+              Decoder.decodeList(
+                for {
+                  id <- Decoder[String].prepare(_.downField("id"))
+                  name <- Decoder[String].prepare(_.downField("title"))
+                } yield (id, name)
+              )
+            )
+          )
+      yield path match
+        case Some(path) =>
+          Some(
+            (
+              PagePath.from(path.toList.map(s => PageName.from(s))).get,
+              RemoteContent(
+                Id.parse(id).get,
+                Map.from(attachments.getOrElse(List.empty).map {
+                  case (id, name) =>
+                    AttachmentName.from(name) -> AttachmentId.from(id).get
+                })
+              )
+            )
+          )
+        case None => None
+    )
+  val decodeItems: Decoder[List[(PagePath, RemoteContent)]] =
+    Decoder
+      .decodeList[Option[(PagePath, RemoteContent)]](decodeItem)
+      .map(_.flatMap(_.toList))
+  request
+    .get(
+      uri"$prefix/content?limit=$lim&start=$offset&type=page&expand=metadata.properties.$p,children.attachment"
+    )
+    .response(
+      asJson[Json].getRight
+        .map(j =>
+          for {
+            start <- j.hcursor.downField("start").as[Int]
+            size <- j.hcursor.downField("size").as[Int]
+            limit <- j.hcursor.downField("limit").as[Int]
+            next <- j.hcursor
+              .downField("_links")
+              .downField("next")
+              .as[Option[String]]
+            inv <- j.hcursor
+              .downField("results")
+              .as[List[(PagePath, RemoteContent)]](decodeItems)
+          } yield GetContentResponse(
+            next.map(_ => getPagesWithProperty(p, offset + limit)),
+            Map.from(inv),
+            start,
+            limit,
+            size
+          )
+        )
+        .getRight
+    )
