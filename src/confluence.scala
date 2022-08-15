@@ -36,6 +36,8 @@ object AttachmentId:
 
 case class Access(token: Token, domainName: Domain, userName: User)
 
+case class UpdatablePageContent(version: Version, title: Title, body: Body)
+
 private val request: Access ?=> PartialRequest[Either[String, String], Any] =
   val Access(value, _, userName) = summon[Access]
   val credential =
@@ -130,3 +132,47 @@ def getAttachment(c: Id, a: AttachmentId): Request[Array[Byte]] = request
   .get(uri"$prefix/content/$c/child/attachment/$a/download")
   .response(asByteArrayAlways)
   .followRedirects(true)
+
+def getContentForUpdate(id: Id): Request[UpdatablePageContent] =
+  request
+    .get(uri"$prefix/content/$id?expand=version,body.storage&trigger=")
+    .response(
+      asJson[Json].getRight
+        .map(j =>
+          for {
+            title <- j.hcursor.downField("title").as[String]
+            version <- j.hcursor
+              .downField("version")
+              .downField("number")
+              .as[Int]
+            body <- j.hcursor
+              .downField("body")
+              .downField("storage")
+              .downField("value")
+              .as[String]
+          } yield UpdatablePageContent(
+            Version.from(version).get,
+            Title.parse(title).get,
+            Body.parse(body).get
+          )
+        )
+        .getRight
+    )
+
+def updatePage(c: Id, v: Version, t: Title, b: Body): Request[Unit] =
+  request
+    .put(uri"$prefix/content/$c")
+    .body(
+      Json.obj(
+        "title" -> Json.fromString(t.toString),
+        "type" -> Json.fromString("page"),
+        "version" -> Json.obj("number" -> Json.fromInt(v.value)),
+        "body" -> Json.obj(
+          "storage" -> Json.obj(
+            "representation" -> Json.fromString("storage"),
+            "value" -> Json.fromString(b.toString)
+          )
+        )
+      )
+    )
+    .response(ignore)

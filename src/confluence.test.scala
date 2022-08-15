@@ -79,3 +79,18 @@ class ConfluenceSuite extends munit.FunSuite:
 
     deletePage(contentId).send(backend)
   }
+
+  test("updates pages".tag(integration)) {
+    val title = Title.parse(UUID.randomUUID().toString()).get
+    val body1 = Body.parse("one").get
+    val body2 = Body.parse("two").get
+
+    val id = createPage(space, title, body1).send(backend).body
+    val content1 = getContentForUpdate(id).send(backend).body
+    updatePage(id, content1.version.increment, title, body2).send(backend)
+    val content2 = getContentForUpdate(id).send(backend).body
+
+    assertEquals(content2.body, body2)
+
+    deletePage(id).send(backend)
+  }
