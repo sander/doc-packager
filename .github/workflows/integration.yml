@@ -10,8 +10,8 @@ jobs:
   check-workflow-pinning:
     runs-on: ubuntu-latest
     steps:
-      - uses: coursier/cache-action@0cdf229a86211e64f9a576ee6c00cdf662f2554d # ratchet:coursier/cache-action@v6
-      - uses: VirtusLab/scala-cli-setup@0dab3c3ec860f0443d4d25a56a549f9f46204389 # ratchet:VirtusLab/scala-cli-setup@main
+      - uses: coursier/cache-action@288585e12960315492c10d496fafb65b57d9a89b # ratchet:coursier/cache-action@v6
+      - uses: VirtusLab/scala-cli-setup@a173ac6b0b5252a6cf506cfafdd304066bf09da8 # ratchet:VirtusLab/scala-cli-setup@main
         with:
           jvm: temurin:1.17.0.3
           apps: scala-cli
@@ -21,8 +21,8 @@ jobs:
   check-formatting-and-test:
     runs-on: ubuntu-latest
     steps:
-      - uses: coursier/cache-action@0cdf229a86211e64f9a576ee6c00cdf662f2554d # ratchet:coursier/cache-action@v6
-      - uses: VirtusLab/scala-cli-setup@0dab3c3ec860f0443d4d25a56a549f9f46204389 # ratchet:VirtusLab/scala-cli-setup@main
+      - uses: coursier/cache-action@288585e12960315492c10d496fafb65b57d9a89b # ratchet:coursier/cache-action@v6
+      - uses: VirtusLab/scala-cli-setup@a173ac6b0b5252a6cf506cfafdd304066bf09da8 # ratchet:VirtusLab/scala-cli-setup@main
         with:
           jvm: temurin:1.17.0.3
           apps: scala-cli
