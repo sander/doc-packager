@@ -11,9 +11,16 @@ class FormattingSuite extends munit.FunSuite:
       case PrefixedAttribute(prefix, name, value, _) => value.text
     }
 
-  test("renders a directory to a list of its children") {
-    val page = directoryPage()
-    assertEquals(page.value.prefix, "ac")
-    assertEquals(page.value.label, "structured-macro")
-    assertEquals(attribute(page.value, "ac", "name"), Some("children"))
+  test("renders a directory as a list of its children") {
+    val p = Page.index
+    assertEquals(p.contents.length, 1)
+    assertEquals(p.contents.head.prefix, "ac")
+    assertEquals(p.contents.head.label, "structured-macro")
+    assertEquals(attribute(p.contents.head, "ac", "name"), Some("children"))
+  }
+
+  test("renders a file initially as plain text") {
+    val f = File.from("<p>test</p>").get
+    val p = Page(f)
+    assert(p.contents.head.toString.contains("&lt;p&gt;test&lt;/p&gt;"))
   }
