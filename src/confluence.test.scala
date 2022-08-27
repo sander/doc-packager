@@ -43,29 +43,6 @@ class ConfluenceSuite extends munit.FunSuite:
     teardown = { id => deletePage(id).send(backend) }
   )
 
-  test("gets a space property".tag(integration).ignore) {
-    val property = PropertyKey.parse("non-existent-test-property").get
-    val request = getSpaceProperty(space, property)
-
-    val response = request.send(backend).body
-
-    assert(response.isEmpty)
-  }
-
-  test("updates a space property effectively".tag(integration).ignore) {
-    // TODO: updateSpaceProperty 404, probably because of required admin rights
-
-    val property = PropertyKey.parse("test-property").get
-    val value = UUID.randomUUID().toString()
-    val update = updateSpaceProperty(space, property, value)
-    val get = getSpaceProperty(space, property)
-
-    update.send(backend)
-    val response = get.send(backend).body
-
-    assert(response.contains(value))
-  }
-
   page.test("creates and deletes pages".tag(integration)) { id => () }
 
   page.test("uploads and gets attachments".tag(integration)) { contentId =>

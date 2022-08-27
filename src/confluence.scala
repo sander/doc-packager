@@ -71,28 +71,6 @@ opaque type PropertyKey = String
 object PropertyKey:
   def parse(value: String): Option[PropertyKey] = Some(value)
 
-def getSpaceProperty(s: SpaceKey, p: PropertyKey): Request[Option[String]] =
-  request
-    .get(uri"$prefix/space/$s/property/$p")
-    .response(
-      asJson[Json].map {
-        case Left(x) => Right(None)
-        case Right(json) =>
-          json.hcursor.downField("value").as[Option[String]]
-      }.getRight
-    )
-
-def updateSpaceProperty(s: SpaceKey, k: PropertyKey, v: String): Request[Unit] =
-  request
-    .post(uri"$prefix/space/$s/property")
-    .body(
-      Json.obj(
-        "key" -> Json.fromString(k.toString),
-        "value" -> Json.fromString(v)
-      )
-    )
-    .response(asJson[Json].getRight.map(_.hcursor.as[Unit]))
-
 def createPage(s: SpaceKey, t: Title, b: Body): Request[Id] =
   request
     .post(uri"$prefix/content")
