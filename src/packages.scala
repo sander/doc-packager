@@ -6,3 +6,10 @@ package docpkg
   * https://developer.atlassian.com/cloud/confluence/rest/intro/
   */
 package object confluence
+
+/** See [Confluence Storage Format].
+  *
+  * [Confluence Storage Format]:
+  * https://confluence.atlassian.com/doc/confluence-storage-format-790796544.html
+  */
+package object formatting
