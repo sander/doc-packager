@@ -1,5 +1,9 @@
 package docpkg
 
+// Collecting documentation here, pending research of:
+// - https://github.com/lampepfl/dotty/issues/11284
+// - https://contributors.scala-lang.org/t/dropping-package-objects-and-documentation/2942
+
 /** See [Confluence REST API].
   *
   * [Confluence REST API]:
