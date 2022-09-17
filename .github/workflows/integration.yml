@@ -1,0 +1,25 @@
+name: Integration
+on:
+  push:
+    branches: [main]
+  pull_request:
+    branches: [main]
+permissions:
+  contents: read
+jobs:
+  check-workflow-pinning:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: "docker://ghcr.io/sethvargo/ratchet@sha256:b3e3e8da9f6269e52a48dc45bbe7bc4801d434a0bd987aa394f9bcb99a399d61" # ratchet:docker://ghcr.io/sethvargo/ratchet:0.2.3
+        with:
+          args: "check .github/workflows/integration.yml"
+  check-formatting-and-test:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@2541b1294d2704b0964813337f33b291d3f8596b # ratchet:actions/checkout@v3
+      - uses: actions/setup-java@d854b6da19cdadd9a010605529e522c2393ebd38 # ratchet:actions/setup-java@v3
+        with:
+          distribution: temurin
+          java-version: "17"
+          cache: maven
+      - run: mvn test
