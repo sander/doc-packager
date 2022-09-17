@@ -4,7 +4,7 @@ import static java.util.Objects.requireNonNullElse;
 
 public class Main {
 
-  static String name = "Documentation Packager";
+  private static final String name = "Documentation Packager";
 
   public static void main(String[] args) {
     var p = Main.class.getPackage();
