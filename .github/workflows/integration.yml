@@ -14,7 +14,7 @@ jobs:
       - uses: "docker://ghcr.io/sethvargo/ratchet@sha256:b3e3e8da9f6269e52a48dc45bbe7bc4801d434a0bd987aa394f9bcb99a399d61" # ratchet:docker://ghcr.io/sethvargo/ratchet:0.2.3
         with:
           args: "check .github/workflows/integration.yml"
-  check-formatting-and-test:
+  deploy:
     runs-on: ubuntu-latest
     permissions:
       packages: write
