@@ -19,7 +19,7 @@ public class MainTests {
   @Test
   @Tag("integration")
   void detectsContentTrackerAssumingGitIsInstalled() {
-    assertTrue(Main.checkContentTrackerCompatibility());
+    assertTrue(Main.getCompatibleContentTracker().isPresent());
   }
 
   @Test

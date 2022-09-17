@@ -14,21 +14,24 @@ public class Main {
   public static final SemanticVersion minimumContentTrackerVersion =
     new SemanticVersion("git", 2, 37, 0);
 
-  public static boolean checkContentTrackerCompatibility() {
+  public static Optional<ContentTracker> getCompatibleContentTracker() {
     var version = getContentTrackerVersion();
     logger.debug("Got content tracker version: {}", version);
 
     return version
       .flatMap(SemanticVersion::from).stream()
       .peek(v -> logger.debug("Parsed as semantic version: {}", v))
-      .map(minimumContentTrackerVersion::isMetBy)
+      .filter(minimumContentTrackerVersion::isMetBy)
       .findFirst()
-      .orElse(false);
+      .map(v -> new LocalGitContentTracker());
   }
 
   public static void main(String[] args) {
     System.out.printf("%s version %s\n",
       name, getVersion().orElse(defaultVersion));
+  }
+
+  interface ContentTracker {
   }
 
   record SemanticVersion(String name, int major, int minor, int patch) {
@@ -85,5 +88,8 @@ public class Main {
   private static Optional<String> getVersion() {
     return Optional
       .ofNullable(Main.class.getPackage().getImplementationVersion());
+  }
+
+  private static class LocalGitContentTracker implements ContentTracker {
   }
 }
