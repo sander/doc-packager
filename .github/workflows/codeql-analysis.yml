@@ -32,7 +32,7 @@ jobs:
         languages: ${{ matrix.language }}
         queries: security-and-quality
 
-    - uses: mvn --batch-mode compile
+    - run: mvn --batch-mode compile
 
     - name: Perform CodeQL Analysis
       uses: github/codeql-action/analyze@v2
