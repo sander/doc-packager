@@ -1,5 +1,8 @@
 package docpkg;
 
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
+
 import java.io.IOException;
 import java.util.Optional;
 import java.util.regex.Matcher;
@@ -12,41 +15,28 @@ public class Main {
     new SemanticVersion("git", 2, 37, 0);
 
   public static boolean checkContentTrackerCompatibility() {
-    return getContentTrackerVersion()
-      .flatMap(SemanticVersion::from)
+    var version = getContentTrackerVersion();
+    logger.debug("Got content tracker version: {}", version);
+
+    return version
+      .flatMap(SemanticVersion::from).stream()
+      .peek(v -> logger.debug("Parsed as semantic version: {}", v))
       .map(minimumContentTrackerVersion::isMetBy)
+      .findFirst()
       .orElse(false);
   }
 
   public static void main(String[] args) {
-    System.out.printf("%s %s\n", name, getVersion().orElse(defaultVersion));
+    System.out.printf("%s version %s\n",
+      name, getVersion().orElse(defaultVersion));
   }
 
-  private static final String defaultVersion = "(Not packaged)";
-  private static final String name = "Documentation Packager";
-
-  private static Optional<String> getContentTrackerVersion() {
-    try {
-      var process =
-        new ProcessBuilder(minimumContentTrackerVersion.name, "version")
-          .start();
-      var bytes = process.getInputStream().readAllBytes();
-      return Optional.of(new String(bytes).trim());
-    } catch (IOException e) {
-      return Optional.empty();
-    }
-  }
-
-  private static Optional<String> getVersion() {
-    return Optional
-      .ofNullable(Main.class.getPackage().getImplementationVersion());
-  }
-
-  private record SemanticVersion(String name, int major, int minor, int patch) {
+  record SemanticVersion(String name, int major, int minor, int patch) {
 
     static Optional<SemanticVersion> from(String s) {
-      var pattern =
-        Pattern.compile("([^ ]+) version (\\d+)\\.(\\d+)\\.(\\d+) \\(.*\\)");
+      var pattern = Pattern.compile(
+        "([^ ]+) version (\\d+)\\.(\\d+)\\.(\\d+)(?: \\(.*\\))?"
+      );
       return Optional.of(s)
         .map(pattern::matcher)
         .filter(Matcher::matches)
@@ -68,11 +58,32 @@ public class Main {
       return other.isCompatibleWith(this);
     }
 
-    boolean isCompatibleWith(SemanticVersion requirement) {
+    private boolean isCompatibleWith(SemanticVersion requirement) {
       return name.equals(requirement.name) &&
         major == requirement.major
         && minor >= requirement.minor
         && (minor > requirement.minor || patch >= requirement.patch);
     }
+  }
+
+  private static final Logger logger = LoggerFactory.getLogger(Main.class);
+  private static final String defaultVersion = "(Not packaged)";
+  private static final String name = "Documentation Packager";
+
+  private static Optional<String> getContentTrackerVersion() {
+    try {
+      var process =
+        new ProcessBuilder(minimumContentTrackerVersion.name, "version")
+          .start();
+      var bytes = process.getInputStream().readAllBytes();
+      return Optional.of(new String(bytes).trim());
+    } catch (IOException e) {
+      return Optional.empty();
+    }
+  }
+
+  private static Optional<String> getVersion() {
+    return Optional
+      .ofNullable(Main.class.getPackage().getImplementationVersion());
   }
 }
