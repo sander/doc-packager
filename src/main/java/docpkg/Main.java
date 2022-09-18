@@ -92,7 +92,11 @@ public class Main {
         .lines().collect(Collectors.joining("\n")).trim();
     var commitTree = new ProcessBuilder("git", "commit-tree", treeId, "-m",
       "build: new documentation package").start();
-    assert (commitTree.waitFor() == 0);
+    assert commitTree.waitFor() == 0 :
+      String.format("Unexpected error code %d with message:\n%s",
+        commitTree.exitValue(),
+        new BufferedReader(new InputStreamReader(hashObject.getErrorStream()))
+          .lines().collect(Collectors.joining("\n")).trim());
     var commitId =
       new BufferedReader(new InputStreamReader(commitTree.getInputStream()))
         .lines().collect(Collectors.joining("\n")).trim();
