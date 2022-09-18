@@ -101,16 +101,20 @@ public class Main {
     var treeId =
       new BufferedReader(new InputStreamReader(hashObject.getInputStream()))
         .lines().collect(Collectors.joining("\n")).trim();
+    logger.debug("Committing tree with hash {}", treeId);
     var commitTree = new ProcessBuilder("git", "commit-tree", treeId, "-m",
       "build: new documentation package").start();
     assert commitTree.waitFor() == 0 :
-      String.format("Unexpected error code %d with message:\n%s",
+      String.format("Unexpected error code %d with message:\n%s\n%s",
         commitTree.exitValue(),
+        new BufferedReader(new InputStreamReader(hashObject.getInputStream()))
+          .lines().collect(Collectors.joining("\n")).trim(),
         new BufferedReader(new InputStreamReader(hashObject.getErrorStream()))
           .lines().collect(Collectors.joining("\n")).trim());
     var commitId =
       new BufferedReader(new InputStreamReader(commitTree.getInputStream()))
         .lines().collect(Collectors.joining("\n")).trim();
+    logger.debug("Created commit ID {}", commitId);
     return new CommitId(commitId);
   }
 
