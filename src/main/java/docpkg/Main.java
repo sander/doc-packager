@@ -21,7 +21,8 @@ public class Main {
   public static final SemanticVersion minimumContentTrackerVersion =
     new SemanticVersion("git", 2, 37, 0);
 
-  public static Optional<ContentTracker> getCompatibleContentTracker() {
+  public static Optional<ContentTracker> initializeCompatibleContentTracker(
+    PackageName name) {
     var version = getContentTrackerVersion();
     logger.debug("Got content tracker version: {}", version);
 
@@ -30,7 +31,13 @@ public class Main {
       .peek(v -> logger.debug("Parsed as semantic version: {}", v))
       .filter(minimumContentTrackerVersion::isMetBy)
       .findFirst()
-      .map(v -> new LocalGitContentTracker());
+      .map(v -> {
+        try {
+          return new LocalGitContentTracker(name);
+        } catch (IOException | InterruptedException e) {
+          throw new RuntimeException(e);
+        }
+      });
   }
 
   public static void main(String[] args) {
@@ -38,8 +45,11 @@ public class Main {
       name, getVersion().orElse(defaultVersion));
   }
 
-  static void addWorkTree(Path path, BranchName name) throws IOException, InterruptedException {
-    var worktree = new ProcessBuilder("git", "worktree", "add", "--force", path.toString(), name.value()).start();
+  static void addWorkTree(Path path, BranchName name)
+    throws IOException, InterruptedException {
+    var worktree = new ProcessBuilder(
+      "git", "worktree", "add", "--force", path.toString(), name.value())
+      .start();
     assert (worktree.waitFor() == 0);
   }
 
@@ -202,5 +212,13 @@ public class Main {
   }
 
   private static class LocalGitContentTracker implements ContentTracker {
+
+    final PackageName name;
+
+    LocalGitContentTracker(PackageName name)
+      throws IOException, InterruptedException {
+      this.name = name;
+      createWorkTree(name);
+    }
   }
 }

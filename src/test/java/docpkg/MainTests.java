@@ -13,6 +13,8 @@ import static org.junit.jupiter.api.Assertions.assertTrue;
 
 public class MainTests {
 
+  static Main.PackageName name = new Main.PackageName("main");
+
   @Test
   void runsWithoutErrors() {
     Main.main(new String[]{});
@@ -21,7 +23,7 @@ public class MainTests {
   @Test
   @Tag("integration")
   void detectsContentTrackerAssumingGitIsInstalled() {
-    assertTrue(Main.getCompatibleContentTracker().isPresent());
+    assertTrue(Main.initializeCompatibleContentTracker(name).isPresent());
   }
 
   @Test
@@ -42,7 +44,6 @@ public class MainTests {
   @Test
   @Tag("integration")
   void createsWorkTree() throws IOException, InterruptedException {
-    var name = new Main.PackageName("main");
     Main.createWorkTree(name);
   }
 
