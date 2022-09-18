@@ -3,10 +3,16 @@ package docpkg;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
+import java.io.BufferedReader;
 import java.io.IOException;
+import java.io.InputStreamReader;
+import java.nio.file.Files;
+import java.nio.file.Path;
+import java.util.Comparator;
 import java.util.Optional;
 import java.util.regex.Matcher;
 import java.util.regex.Pattern;
+import java.util.stream.Collectors;
 import java.util.stream.Stream;
 
 public class Main {
@@ -31,7 +37,98 @@ public class Main {
       name, getVersion().orElse(defaultVersion));
   }
 
+  static void addWorkTree(Path path, BranchName name) throws IOException, InterruptedException {
+    var worktree = new ProcessBuilder("git", "worktree", "add", "--force", path.toString(), name.value()).start();
+    assert (worktree.waitFor() == 0);
+  }
+
+  /**
+   * Assumes that the origin is called <code>origin</code>.
+   *
+   * @param name is the name of the branch
+   * @param id   is the ID of the commit
+   * @throws IOException          if any Git command fails
+   * @throws InterruptedException if the thread gets interrupted while waiting
+   *                              for Git
+   */
+  static void ensureBranchExistsWithDefaultCommit(BranchName name, CommitId id)
+    throws IOException, InterruptedException {
+    var trackingBranch = new ProcessBuilder("git", "branch", name.value(),
+      String.format("origin/%s", name.value())).start();
+    switch (trackingBranch.waitFor()) {
+      case 0, 128 -> {
+      }
+      default -> throw new RuntimeException(
+        String.format("Unexpected error code %d upon branch tracking",
+          trackingBranch.exitValue()));
+    }
+    var newBranch = new ProcessBuilder("git", "branch", name.value(),
+      id.hash()).start();
+    switch (newBranch.waitFor()) {
+      case 0, 128 -> {
+      }
+      default -> throw new RuntimeException(
+        String.format("Unexpected error code %d upon branch creation",
+          newBranch.exitValue()));
+    }
+  }
+
+  /**
+   * Assumes POSIX compliance (in particular <code>/dev/null</code>).
+   * Assumes Git is configured well (in particular, can commit).
+   *
+   * @return the ID of the initial commit
+   * @throws IOException          if any Git command fails
+   * @throws InterruptedException if the thread gets interrupted while waiting
+   *                              for Git
+   */
+  static CommitId createInitialCommit()
+    throws IOException, InterruptedException {
+    var hashObject = new ProcessBuilder(
+      "git", "hash-object", "-t", "tree", "/dev/null").start();
+    assert (hashObject.waitFor() == 0);
+    var treeId =
+      new BufferedReader(new InputStreamReader(hashObject.getInputStream()))
+        .lines().collect(Collectors.joining("\n")).trim();
+    var commitTree = new ProcessBuilder("git", "commit-tree", treeId, "-m",
+      "build: new documentation package").start();
+    assert (commitTree.waitFor() == 0);
+    var commitId =
+      new BufferedReader(new InputStreamReader(commitTree.getInputStream()))
+        .lines().collect(Collectors.joining("\n")).trim();
+    return new CommitId(commitId);
+  }
+
+  static void createWorkTree(PackageName name)
+    throws IOException, InterruptedException {
+    Path path = Path.of("target/docpkg");
+    var branchName = new BranchName(String.format("docpkg/%s", name.value()));
+    removeRecursively(path);
+    var commitId = createInitialCommit();
+    ensureBranchExistsWithDefaultCommit(branchName, commitId);
+    addWorkTree(path, branchName);
+  }
+
+  static void removeRecursively(Path path) throws IOException {
+    if (Files.exists(path)) {
+      try (var walk = Files.walk(path)) {
+        for (var p : walk.sorted(Comparator.reverseOrder()).toList()) {
+          Files.delete(p);
+        }
+      }
+    }
+  }
+
+  record BranchName(String value) {
+  }
+
+  record CommitId(String hash) {
+  }
+
   interface ContentTracker {
+  }
+
+  record PackageName(String value) {
   }
 
   record SemanticVersion(String name, int major, int minor, int patch) {

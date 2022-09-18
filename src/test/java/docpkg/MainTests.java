@@ -3,10 +3,19 @@ package docpkg;
 import org.junit.jupiter.api.Assertions;
 import org.junit.jupiter.api.Tag;
 import org.junit.jupiter.api.Test;
+import org.opentest4j.AssertionFailedError;
 
+import java.io.BufferedReader;
+import java.io.IOException;
+import java.io.InputStreamReader;
+import java.nio.file.Files;
+import java.nio.file.Path;
+import java.util.Comparator;
 import java.util.Optional;
+import java.util.stream.Collectors;
 import java.util.stream.Stream;
 
+import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.junit.jupiter.api.Assertions.assertTrue;
 
 public class MainTests {
@@ -35,5 +44,12 @@ public class MainTests {
       .map(Main.SemanticVersion::from)
       .map(Optional::isPresent)
       .forEach(Assertions::assertTrue);
+  }
+
+  @Test
+  @Tag("integration")
+  void createsWorkTree() throws IOException, InterruptedException {
+    var name = new Main.PackageName("main");
+    Main.createWorkTree(name);
   }
 }
