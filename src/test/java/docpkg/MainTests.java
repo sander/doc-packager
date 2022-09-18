@@ -8,6 +8,7 @@ import java.io.IOException;
 import java.util.Optional;
 import java.util.stream.Stream;
 
+import static org.junit.jupiter.api.Assertions.assertThrows;
 import static org.junit.jupiter.api.Assertions.assertTrue;
 
 public class MainTests {
@@ -43,5 +44,14 @@ public class MainTests {
   void createsWorkTree() throws IOException, InterruptedException {
     var name = new Main.PackageName("main");
     Main.createWorkTree(name);
+  }
+
+  @Test
+  void validatePackageNames() {
+    Stream.of("a", "a/b", "a-b").forEach(Main.PackageName::new);
+    assertThrows(NullPointerException.class, () -> new Main.PackageName(null));
+    Stream.of("", "A", "a".repeat(256), "-", "a:b").forEach(s ->
+      assertThrows(IllegalArgumentException.class,
+        () -> new Main.PackageName(s)));
   }
 }

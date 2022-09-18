@@ -9,6 +9,7 @@ import java.io.InputStreamReader;
 import java.nio.file.Files;
 import java.nio.file.Path;
 import java.util.Comparator;
+import java.util.Objects;
 import java.util.Optional;
 import java.util.regex.Matcher;
 import java.util.regex.Pattern;
@@ -133,6 +134,15 @@ public class Main {
   }
 
   record PackageName(String value) {
+
+    static Pattern pattern = Pattern.compile("[a-z][a-z-/]{0,19}");
+
+    PackageName {
+      Objects.requireNonNull(value);
+      if (!pattern.matcher(value).matches())
+        throw new IllegalArgumentException(
+          String.format("Input did not match %s", pattern.pattern()));
+    }
   }
 
   record SemanticVersion(String name, int major, int minor, int patch) {
