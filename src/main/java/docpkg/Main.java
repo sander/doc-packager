@@ -95,8 +95,8 @@ public class Main {
    */
   static CommitId createInitialCommit()
     throws IOException, InterruptedException {
-    var hashObject = new ProcessBuilder(
-      "git", "hash-object", "-t", "tree", "/dev/null").start();
+    var hashObject = new ProcessBuilder("git", "mktree")
+      .redirectInput(Path.of("/dev/null").toFile()).start();
     assert (hashObject.waitFor() == 0);
     var treeId =
       new BufferedReader(new InputStreamReader(hashObject.getInputStream()))
