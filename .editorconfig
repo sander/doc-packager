@@ -3,6 +3,8 @@ root = true
 [*]
 charset = utf-8
 end_of_line = lf
+ij_continuation_indent_size = 4
+ij_wrap_on_typing = true
 indent_size = 2
 indent_style = space
 insert_final_newline = true

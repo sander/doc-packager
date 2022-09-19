@@ -19,37 +19,37 @@ import java.util.stream.Stream;
 public class Main {
 
   public static final SemanticVersion minimumContentTrackerVersion =
-    new SemanticVersion("git", 2, 37, 0);
+      new SemanticVersion("git", 2, 37, 0);
 
   public static Optional<ContentTracker> initializeCompatibleContentTracker(
-    PackageName name) {
+      PackageName name) {
     var version = getContentTrackerVersion();
     logger.debug("Got content tracker version: {}", version);
 
     return version
-      .flatMap(SemanticVersion::from).stream()
-      .peek(v -> logger.debug("Parsed as semantic version: {}", v))
-      .filter(minimumContentTrackerVersion::isMetBy)
-      .findFirst()
-      .map(v -> {
-        try {
-          return new LocalGitContentTracker(name);
-        } catch (IOException | InterruptedException e) {
-          throw new RuntimeException(e);
-        }
-      });
+        .flatMap(SemanticVersion::from).stream()
+        .peek(v -> logger.debug("Parsed as semantic version: {}", v))
+        .filter(minimumContentTrackerVersion::isMetBy)
+        .findFirst()
+        .map(v -> {
+          try {
+            return new LocalGitContentTracker(name);
+          } catch (IOException | InterruptedException e) {
+            throw new RuntimeException(e);
+          }
+        });
   }
 
   public static void main(String[] args) {
     System.out.printf("%s version %s\n",
-      name, getVersion().orElse(defaultVersion));
+        name, getVersion().orElse(defaultVersion));
   }
 
   static void addWorkTree(Path path, BranchName name)
-    throws IOException, InterruptedException {
+      throws IOException, InterruptedException {
     var worktree = new ProcessBuilder(
-      "git", "worktree", "add", "--force", path.toString(), name.value())
-      .start();
+        "git", "worktree", "add", "--force", path.toString(), name.value())
+        .start();
     assert (worktree.waitFor() == 0);
   }
 
@@ -63,24 +63,24 @@ public class Main {
    *                              for Git
    */
   static void ensureBranchExistsWithDefaultCommit(BranchName name, CommitId id)
-    throws IOException, InterruptedException {
+      throws IOException, InterruptedException {
     var trackingBranch = new ProcessBuilder("git", "branch", name.value(),
-      String.format("origin/%s", name.value())).start();
+        String.format("origin/%s", name.value())).start();
     switch (trackingBranch.waitFor()) {
       case 0, 128 -> {
       }
       default -> throw new RuntimeException(
-        String.format("Unexpected error code %d upon branch tracking",
-          trackingBranch.exitValue()));
+          String.format("Unexpected error code %d upon branch tracking",
+              trackingBranch.exitValue()));
     }
     var newBranch = new ProcessBuilder("git", "branch", name.value(),
-      id.hash()).start();
+        id.hash()).start();
     switch (newBranch.waitFor()) {
       case 0, 128 -> {
       }
       default -> throw new RuntimeException(
-        String.format("Unexpected error code %d upon branch creation",
-          newBranch.exitValue()));
+          String.format("Unexpected error code %d upon branch creation",
+              newBranch.exitValue()));
     }
   }
 
@@ -94,32 +94,34 @@ public class Main {
    *                              for Git
    */
   static CommitId createInitialCommit()
-    throws IOException, InterruptedException {
+      throws IOException, InterruptedException {
     var hashObject = new ProcessBuilder("git", "mktree")
-      .redirectInput(Path.of("/dev/null").toFile()).start();
+        .redirectInput(Path.of("/dev/null").toFile()).start();
     assert (hashObject.waitFor() == 0);
     var treeId =
-      new BufferedReader(new InputStreamReader(hashObject.getInputStream()))
-        .lines().collect(Collectors.joining("\n")).trim();
+        new BufferedReader(new InputStreamReader(hashObject.getInputStream()))
+            .lines().collect(Collectors.joining("\n")).trim();
     logger.debug("Committing tree with hash {}", treeId);
     var commitTree = new ProcessBuilder("git", "commit-tree", treeId, "-m",
-      "build: new documentation package").start();
+        "build: new documentation package").start();
     assert commitTree.waitFor() == 0 :
-      String.format("Unexpected error code %d with message:\n%s\n%s",
-        commitTree.exitValue(),
-        new BufferedReader(new InputStreamReader(hashObject.getInputStream()))
-          .lines().collect(Collectors.joining("\n")).trim(),
-        new BufferedReader(new InputStreamReader(hashObject.getErrorStream()))
-          .lines().collect(Collectors.joining("\n")).trim());
+        String.format("Unexpected error code %d with message:\n%s\n%s",
+            commitTree.exitValue(),
+            new BufferedReader(
+                new InputStreamReader(hashObject.getInputStream()))
+                .lines().collect(Collectors.joining("\n")).trim(),
+            new BufferedReader(
+                new InputStreamReader(hashObject.getErrorStream()))
+                .lines().collect(Collectors.joining("\n")).trim());
     var commitId =
-      new BufferedReader(new InputStreamReader(commitTree.getInputStream()))
-        .lines().collect(Collectors.joining("\n")).trim();
+        new BufferedReader(new InputStreamReader(commitTree.getInputStream()))
+            .lines().collect(Collectors.joining("\n")).trim();
     logger.debug("Created commit ID {}", commitId);
     return new CommitId(commitId);
   }
 
   static void createWorkTree(PackageName name)
-    throws IOException, InterruptedException {
+      throws IOException, InterruptedException {
     Path path = Path.of("target/docpkg");
     var branchName = new BranchName(String.format("docpkg/%s", name.value()));
     removeRecursively(path);
@@ -155,7 +157,7 @@ public class Main {
       Objects.requireNonNull(value);
       if (!pattern.matcher(value).matches())
         throw new IllegalArgumentException(
-          String.format("Input did not match %s", pattern.pattern()));
+            String.format("Input did not match %s", pattern.pattern()));
     }
   }
 
@@ -163,23 +165,23 @@ public class Main {
 
     static Optional<SemanticVersion> from(String s) {
       var pattern = Pattern.compile(
-        "([^ ]+) version (\\d+)\\.(\\d+)\\.(\\d+)(?: \\(.*\\))?"
+          "([^ ]+) version (\\d+)\\.(\\d+)\\.(\\d+)(?: \\(.*\\))?"
       );
       return Optional.of(s)
-        .map(pattern::matcher)
-        .filter(Matcher::matches)
-        .map(m -> {
-          var components = Stream.of(2, 3, 4)
-            .map(m::group)
-            .map(Integer::parseUnsignedInt)
-            .toList();
-          return new SemanticVersion(
-            m.group(1),
-            components.get(0),
-            components.get(1),
-            components.get(2)
-          );
-        });
+          .map(pattern::matcher)
+          .filter(Matcher::matches)
+          .map(m -> {
+            var components = Stream.of(2, 3, 4)
+                .map(m::group)
+                .map(Integer::parseUnsignedInt)
+                .toList();
+            return new SemanticVersion(
+                m.group(1),
+                components.get(0),
+                components.get(1),
+                components.get(2)
+            );
+          });
     }
 
     boolean isMetBy(SemanticVersion other) {
@@ -188,9 +190,9 @@ public class Main {
 
     private boolean isCompatibleWith(SemanticVersion requirement) {
       return name.equals(requirement.name) &&
-        major == requirement.major
-        && minor >= requirement.minor
-        && (minor > requirement.minor || patch >= requirement.patch);
+          major == requirement.major
+          && minor >= requirement.minor
+          && (minor > requirement.minor || patch >= requirement.patch);
     }
   }
 
@@ -201,8 +203,8 @@ public class Main {
   private static Optional<String> getContentTrackerVersion() {
     try {
       var process =
-        new ProcessBuilder(minimumContentTrackerVersion.name, "version")
-          .start();
+          new ProcessBuilder(minimumContentTrackerVersion.name, "version")
+              .start();
       var bytes = process.getInputStream().readAllBytes();
       return Optional.of(new String(bytes).trim());
     } catch (IOException e) {
@@ -212,7 +214,7 @@ public class Main {
 
   private static Optional<String> getVersion() {
     return Optional
-      .ofNullable(Main.class.getPackage().getImplementationVersion());
+        .ofNullable(Main.class.getPackage().getImplementationVersion());
   }
 
   private static class LocalGitContentTracker implements ContentTracker {
@@ -220,7 +222,7 @@ public class Main {
     final PackageName name;
 
     LocalGitContentTracker(PackageName name)
-      throws IOException, InterruptedException {
+        throws IOException, InterruptedException {
       this.name = name;
       createWorkTree(name);
     }

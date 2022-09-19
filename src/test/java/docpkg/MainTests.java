@@ -36,9 +36,9 @@ public class MainTests {
   @Test
   void semanticVersionParsing() {
     Stream.of("git version 2.37.0 (Apple Git-136)", "git version 2.37.0")
-      .map(Main.SemanticVersion::from)
-      .map(Optional::isPresent)
-      .forEach(Assertions::assertTrue);
+        .map(Main.SemanticVersion::from)
+        .map(Optional::isPresent)
+        .forEach(Assertions::assertTrue);
   }
 
   @Test
@@ -52,7 +52,7 @@ public class MainTests {
     Stream.of("a", "a/b", "a-b").forEach(Main.PackageName::new);
     assertThrows(NullPointerException.class, () -> new Main.PackageName(null));
     Stream.of("", "A", "a".repeat(256), "-", "a:b").forEach(s ->
-      assertThrows(IllegalArgumentException.class,
-        () -> new Main.PackageName(s)));
+        assertThrows(IllegalArgumentException.class,
+            () -> new Main.PackageName(s)));
   }
 }
