@@ -38,8 +38,10 @@ class DocumentationPackaging {
 
     final private ContentTracking.Service content;
 
-    Live(ContentTracking.Service content) {
+    Live(ContentTracking.Service content, PackageName name) {
       this.content = content;
+
+      createWorkTree(name);
     }
 
     /**

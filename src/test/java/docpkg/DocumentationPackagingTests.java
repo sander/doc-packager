@@ -16,8 +16,7 @@ public class DocumentationPackagingTests {
   @Tag("integration")
   void createsWorkTree() {
     var content = new ContentTracking.GitService();
-    var packaging = new DocumentationPackaging.Live(content);
-    packaging.createWorkTree(name);
+    new DocumentationPackaging.Live(content, name);
   }
 
   @Test
