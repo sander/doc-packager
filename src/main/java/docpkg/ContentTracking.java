@@ -7,7 +7,9 @@ import org.slf4j.LoggerFactory;
 
 import java.io.IOException;
 import java.io.InputStream;
+import java.nio.file.Files;
 import java.nio.file.Path;
+import java.nio.file.StandardCopyOption;
 import java.util.LinkedList;
 import java.util.List;
 import java.util.Optional;
@@ -19,10 +21,18 @@ import java.util.stream.Stream;
 @BoundedContext
 class ContentTracking {
 
+  private static final Logger logger =
+      LoggerFactory.getLogger(ContentTracking.class);
+
   interface Service {
+    void addFile(Path worktree, Path path);
+
     void addWorkTree(Path path, BranchName name);
 
     void createBranch(BranchName name, Point point);
+
+    @Risk(scenario = "The Path could be anything, not per se a valid WorkTree")
+    Optional<CommitId> commit(Path path, CommitMessage message);
 
     CommitId commitTree(ObjectName name);
 
@@ -33,6 +43,9 @@ class ContentTracking {
   }
 
   record CommitId(String value) implements Point {
+  }
+
+  record CommitMessage(String value) {
   }
 
   record ObjectName(String value) {
@@ -87,15 +100,33 @@ class ContentTracking {
     public static final SemanticVersion minimumVersion =
         new SemanticVersion("git", 2, 37, 0);
 
-    private static final Logger logger =
-        LoggerFactory.getLogger(GitService.class);
-
     public GitService() {
       if (getVersion().stream()
           .peek(v -> logger.debug("Parsed as semantic version: {}", v))
           .noneMatch(minimumVersion::isMetBy)) {
         throw new RuntimeException("Need " + minimumVersion);
       }
+    }
+
+    @Override
+    public void addFile(Path worktree, Path path) {
+      var target = worktree.resolve(path);
+      logger.debug("Copying from {} to {}", path, target);
+      try {
+        Files.createDirectories(target.getParent());
+      } catch (IOException e) {
+        throw new RuntimeException("Could not create directories", e);
+      }
+      try {
+        Files.copy(path, worktree.resolve(path),
+            StandardCopyOption.REPLACE_EXISTING);
+      } catch (IOException e) {
+        throw new RuntimeException("Could not copy file", e);
+      }
+      logger.debug("Copied");
+      await(command("add", path.toString()).directory(worktree.toFile()))
+          .expectSuccess();
+      logger.debug("Added");
     }
 
     @Override
@@ -115,6 +146,26 @@ class ContentTracking {
     @Override
     public void createBranch(BranchName name, Point point) {
       await(command("branch", name.value(), point.value()));
+    }
+
+    @Override
+    public Optional<CommitId> commit(Path path, CommitMessage message) {
+      var result = await(
+          command("commit", "-m", message.value()).directory(path.toFile()));
+      switch (result) {
+        case Result.Success s -> {
+          var id = new CommitId(
+              await(command("rev-parse", "HEAD")).get().message());
+          logger.debug("Committed {}", id);
+          return Optional.of(id);
+        }
+        case Result.Failed f -> {
+          logger.debug("Commit failed: {}", f.message().replace("\n", "\\n"));
+          return Optional.empty();
+        }
+        default -> throw new RuntimeException(
+            String.format("Unexpected commit result: %s", result));
+      }
     }
 
     @Override
@@ -169,6 +220,9 @@ class ContentTracking {
           case 0 -> {
             return new Result.Success(read(stdout));
           }
+          case 1 -> {
+            return new Result.Failed(read(stdout));
+          }
           case 128 -> {
             return new Result.FatalApplicationError(read(stderr));
           }
@@ -196,6 +250,9 @@ class ContentTracking {
       }
 
       record FatalApplicationError(String message) implements Result {
+      }
+
+      record Failed(String message) implements Result {
       }
 
       default Success get() {
