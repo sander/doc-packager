@@ -3,6 +3,7 @@ package docpkg;
 import docpkg.ContentTracking.BranchName;
 import docpkg.ContentTracking.CommitId;
 import docpkg.Design.BoundedContext;
+import docpkg.Design.Risk;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
@@ -34,6 +35,8 @@ class DocumentationPackaging {
     }
   }
 
+  @Risk(scenario = "Memory leaks since the work tree is not cleaned up")
+  @Risk(scenario = "User data lost when creating a work tree when one exists")
   static class Live implements Service {
 
     final private ContentTracking.Service content;
@@ -44,9 +47,7 @@ class DocumentationPackaging {
       createWorkTree(name);
     }
 
-    /**
-     * Assumes that the origin is called <code>origin</code>.
-     */
+    @Risk(scenario = "User has the origin configured not as `origin`")
     void ensureBranchExistsWithDefaultCommit(BranchName name,
                                              CommitId id) {
       content.createBranch(name,
@@ -55,10 +56,6 @@ class DocumentationPackaging {
       content.createBranch(name, id);
     }
 
-    /**
-     * Assumes POSIX compliance (in particular <code>/dev/null</code>).
-     * Assumes Git is configured well (in particular, can commit).
-     */
     CommitId createInitialCommit() {
       var treeId = content.makeTree();
       logger.debug("Committing tree with hash {}", treeId);

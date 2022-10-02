@@ -1,6 +1,7 @@
 package docpkg;
 
 import docpkg.Design.BoundedContext;
+import docpkg.Design.Risk;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
@@ -104,6 +105,7 @@ class ContentTracking {
     }
 
     @Override
+    @Risk(scenario = "Git not configured yet for committing")
     public CommitId commitTree(ObjectName name) {
       var message = "build: new documentation package";
       var command = command("commit-tree", name.value(), "-m", message);
@@ -116,6 +118,7 @@ class ContentTracking {
     }
 
     @Override
+    @Risk(scenario = "User has no POSIX-compliant /dev/null")
     public ObjectName makeTree() {
       var nullDevice = Path.of("/dev/null").toFile();
       var command = command("mktree").redirectInput(nullDevice);
