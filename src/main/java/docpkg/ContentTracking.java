@@ -7,6 +7,7 @@ import org.slf4j.LoggerFactory;
 
 import java.io.IOException;
 import java.io.InputStream;
+import java.nio.file.Files;
 import java.nio.file.Path;
 import java.util.LinkedList;
 import java.util.List;
@@ -19,7 +20,12 @@ import java.util.stream.Stream;
 @BoundedContext
 class ContentTracking {
 
+  private static final Logger logger =
+      LoggerFactory.getLogger(ContentTracking.class);
+
   interface Service {
+    void addFile(Path worktree, Path path); // TODO model WorkTree
+
     void addWorkTree(Path path, BranchName name);
 
     void createBranch(BranchName name, Point point);
@@ -87,15 +93,32 @@ class ContentTracking {
     public static final SemanticVersion minimumVersion =
         new SemanticVersion("git", 2, 37, 0);
 
-    private static final Logger logger =
-        LoggerFactory.getLogger(GitService.class);
-
     public GitService() {
       if (getVersion().stream()
           .peek(v -> logger.debug("Parsed as semantic version: {}", v))
           .noneMatch(minimumVersion::isMetBy)) {
         throw new RuntimeException("Need " + minimumVersion);
       }
+    }
+
+    @Override
+    public void addFile(Path worktree, Path path) {
+      var target = worktree.resolve(path);
+      logger.debug("Copying from {} to {}", path, target);
+      try {
+        Files.createDirectories(target.getParent());
+      } catch (IOException e) {
+        throw new RuntimeException("Could not create directories", e);
+      }
+      try {
+        Files.copy(path, worktree.resolve(path));
+      } catch (IOException e) {
+        throw new RuntimeException("Could not copy file", e);
+      }
+      logger.debug("Copied");
+      await(command("add", path.toString()).directory(worktree.toFile()))
+          .expectSuccess();
+      logger.debug("Added");
     }
 
     @Override
