@@ -8,11 +8,8 @@ import docpkg.Design.Risk;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
-import java.io.IOException;
-import java.nio.file.Files;
 import java.nio.file.Path;
 import java.util.Collection;
-import java.util.Comparator;
 import java.util.Objects;
 import java.util.regex.Pattern;
 
@@ -74,26 +71,10 @@ class DocumentationPackaging {
     void createWorkTree(PackageName name) {
       var branchName = new BranchName(
           String.format("docpkg/%s", name.value()));
-      removeRecursively(path);
+      FileOperations.removeRecursively(path);
       var commitId = createInitialCommit();
       ensureBranchExistsWithDefaultCommit(branchName, commitId);
       content.addWorkTree(path, branchName);
-    }
-
-    static void removeRecursively(Path path) {
-      if (Files.exists(path)) {
-        try (var walk = Files.walk(path)) {
-          for (var p : walk.sorted(Comparator.reverseOrder()).toList()) {
-            try {
-              Files.delete(p);
-            } catch (IOException e) {
-              throw new RuntimeException("Could not delete", e);
-            }
-          }
-        } catch (IOException e) {
-          throw new RuntimeException("Could not walk", e);
-        }
-      }
     }
 
     @Override
