@@ -25,6 +25,11 @@ class ContentTracking {
       LoggerFactory.getLogger(ContentTracking.class);
 
   interface Service {
+    void initialize(Path worktree);
+
+    @Risk(scenario = "Origin could be anything, not per se a valid WorkTree")
+    void clone(Path origin, Path worktree);
+
     void addFile(Path worktree, Path path);
 
     void addWorkTree(Path path, BranchName name);
@@ -106,6 +111,17 @@ class ContentTracking {
           .noneMatch(minimumVersion::isMetBy)) {
         throw new RuntimeException("Need " + minimumVersion);
       }
+    }
+
+    @Override
+    public void initialize(Path worktree) {
+      await(command("init", worktree.toString())).expectSuccess();
+    }
+
+    @Override
+    public void clone(Path origin, Path worktree) {
+      await(command("clone", origin.toString(), worktree.toString()))
+          .expectSuccess();
     }
 
     @Override
