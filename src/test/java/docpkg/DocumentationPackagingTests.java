@@ -11,6 +11,7 @@ import org.slf4j.LoggerFactory;
 import java.nio.file.Path;
 import java.nio.file.Paths;
 import java.util.List;
+import java.util.Set;
 import java.util.stream.Stream;
 
 import static org.junit.jupiter.api.Assertions.assertThrows;
@@ -51,7 +52,7 @@ public class DocumentationPackagingTests {
   @Tag("integration")
   void addsFiles() {
     Service service = new DocumentationPackaging.Live(content, name);
-    service.publish(List.of(
+    service.publish(Set.of(
         getResourceFileDescription("docpkg/example/document.md"),
         getResourceFileDescription("docpkg/example/document-2.md")
     ));
