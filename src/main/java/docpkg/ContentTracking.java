@@ -32,6 +32,8 @@ class ContentTracking {
 
     void addFile(Path worktree, Path path);
 
+    void addCurrentWorktree(Path worktree);
+
     void addWorkTree(Path path, BranchName name);
 
     void createBranch(BranchName name, Point point);
@@ -143,6 +145,11 @@ class ContentTracking {
       await(command("add", path.toString()).directory(worktree.toFile()))
           .expectSuccess();
       logger.debug("Added");
+    }
+
+    @Override
+    public void addCurrentWorktree(Path worktree) {
+      await(command("add", ".").directory(worktree.toFile())).expectSuccess();
     }
 
     @Override
