@@ -18,10 +18,10 @@ import java.util.stream.Stream;
 
 import static org.junit.jupiter.api.Assertions.assertThrows;
 
-public class DocumentationPackagingTests {
+public class DocumentationPackagingTest {
 
   private static final Logger logger =
-      LoggerFactory.getLogger(DocumentationPackagingTests.class);
+      LoggerFactory.getLogger(DocumentationPackagingTest.class);
 
   final PackageName name = new PackageName("main");
   final ContentTracking.Service content = new ContentTracking.GitService();
@@ -54,12 +54,12 @@ public class DocumentationPackagingTests {
 
   @Test
   @Tag("integration")
-  void createsWorkTree() {
+  void testInitialization() {
     new DocumentationPackaging.Live(content, name);
   }
 
   @Test
-  void validatePackageNames() {
+  void testPackageNameValidation() {
     Stream.of("a", "a/b", "a-b").forEach(PackageName::new);
     assertThrows(NullPointerException.class, () -> new PackageName(null));
     Stream.of("", "A", "a".repeat(256), "-", "a:b").forEach(s ->
@@ -78,7 +78,7 @@ public class DocumentationPackagingTests {
 
   @Test
   @Tag("integration")
-  void addsFiles() {
+  void testPublishing() {
     Service service = new DocumentationPackaging.Live(content, name);
     service.publish(Set.of(
         getResourceFileDescription("docpkg/example/document.md"),
