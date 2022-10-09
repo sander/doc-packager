@@ -21,10 +21,10 @@ import java.util.stream.Stream;
 @BoundedContext
 class ContentTracking {
 
-  private static final Logger logger =
-      LoggerFactory.getLogger(ContentTracking.class);
+  private static final Logger logger = LoggerFactory.getLogger(ContentTracking.class);
 
   interface Service {
+
     void initialize(Path worktree);
 
     @Risk(scenario = "Origin could be anything, not per se a valid WorkTree")
@@ -46,43 +46,27 @@ class ContentTracking {
     ObjectName makeTree();
   }
 
-  record BranchName(String value) implements Point {
-  }
-
-  record CommitId(String value) implements Point {
-  }
-
-  record CommitMessage(String value) {
-  }
-
-  record ObjectName(String value) {
-  }
-
   sealed interface Point {
+
     String value();
   }
+
+  record BranchName(String value) implements Point {}
+
+  record CommitId(String value) implements Point {}
+
+  record CommitMessage(String value) {}
+
+  record ObjectName(String value) {}
 
   record SemanticVersion(String name, int major, int minor, int patch) {
 
     static Optional<SemanticVersion> from(String s) {
-      var pattern = Pattern.compile(
-          "([^ ]+) version (\\d+)\\.(\\d+)\\.(\\d+)(?: \\(.*\\))?"
-      );
-      return Optional.of(s)
-          .map(pattern::matcher)
-          .filter(Matcher::matches)
-          .map(m -> {
-            var components = Stream.of(2, 3, 4)
-                .map(m::group)
-                .map(Integer::parseUnsignedInt)
-                .toList();
-            return new SemanticVersion(
-                m.group(1),
-                components.get(0),
-                components.get(1),
-                components.get(2)
-            );
-          });
+      var pattern = Pattern.compile("([^ ]+) version (\\d+)\\.(\\d+)\\.(\\d+)(?: \\(.*\\))?");
+      return Optional.of(s).map(pattern::matcher).filter(Matcher::matches).map(m -> {
+        var components = Stream.of(2, 3, 4).map(m::group).map(Integer::parseUnsignedInt).toList();
+        return new SemanticVersion(m.group(1), components.get(0), components.get(1), components.get(2));
+      });
     }
 
     @Override
@@ -95,22 +79,18 @@ class ContentTracking {
     }
 
     private boolean isCompatibleWith(SemanticVersion requirement) {
-      return name.equals(requirement.name) &&
-          major == requirement.major
-          && minor >= requirement.minor
-          && (minor > requirement.minor || patch >= requirement.patch);
+      var nameMatches = name.equals(requirement.name);
+      var compatibleDesign = major == requirement.major && minor >= requirement.minor;
+      return nameMatches && compatibleDesign && (minor > requirement.minor || patch >= requirement.patch);
     }
   }
 
   static class GitService implements Service {
 
-    public static final SemanticVersion minimumVersion =
-        new SemanticVersion("git", 2, 37, 0);
+    public static final SemanticVersion minimumVersion = new SemanticVersion("git", 2, 37, 0);
 
     public GitService() {
-      if (getVersion().stream()
-          .peek(v -> logger.debug("Parsed as semantic version: {}", v))
-          .noneMatch(minimumVersion::isMetBy)) {
+      if (getVersion().stream().peek(v -> logger.debug("Parsed as semantic version: {}", v)).noneMatch(minimumVersion::isMetBy)) {
         throw new RuntimeException("Need " + minimumVersion);
       }
     }
@@ -122,8 +102,7 @@ class ContentTracking {
 
     @Override
     public void clone(Path origin, Path worktree) {
-      await(command("clone", origin.toString(), worktree.toString()))
-          .expectSuccess();
+      await(command("clone", origin.toString(), worktree.toString())).expectSuccess();
     }
 
     @Override
@@ -136,14 +115,12 @@ class ContentTracking {
         throw new RuntimeException("Could not create directories", e);
       }
       try {
-        Files.copy(path, worktree.resolve(path),
-            StandardCopyOption.REPLACE_EXISTING);
+        Files.copy(path, worktree.resolve(path), StandardCopyOption.REPLACE_EXISTING);
       } catch (IOException e) {
         throw new RuntimeException("Could not copy file", e);
       }
       logger.debug("Copied");
-      await(command("add", path.toString()).directory(worktree.toFile()))
-          .expectSuccess();
+      await(command("add", path.toString()).directory(worktree.toFile())).expectSuccess();
       logger.debug("Added");
     }
 
@@ -154,8 +131,7 @@ class ContentTracking {
 
     @Override
     public void addWorkTree(Path path, BranchName name) {
-      await(command("worktree", "add", "--force", path.toString(),
-          name.value())).expectSuccess();
+      await(command("worktree", "add", "--force", path.toString(), name.value())).expectSuccess();
     }
 
     @Override
@@ -173,12 +149,10 @@ class ContentTracking {
 
     @Override
     public Optional<CommitId> commit(Path path, CommitMessage message) {
-      var result = await(
-          command("commit", "-m", message.value()).directory(path.toFile()));
+      var result = await(command("commit", "-m", message.value()).directory(path.toFile()));
       switch (result) {
         case Result.Success s -> {
-          var id = new CommitId(
-              await(command("rev-parse", "HEAD")).get().message());
+          var id = new CommitId(await(command("rev-parse", "HEAD")).get().message());
           logger.debug("Committed {}", id);
           return Optional.of(id);
         }
@@ -186,8 +160,7 @@ class ContentTracking {
           logger.debug("Commit failed: {}", f.message().replace("\n", "\\n"));
           return Optional.empty();
         }
-        default -> throw new RuntimeException(
-            String.format("Unexpected commit result: %s", result));
+        default -> throw new RuntimeException(String.format("Unexpected commit result: %s", result));
       }
     }
 
@@ -237,8 +210,7 @@ class ContentTracking {
       } catch (InterruptedException e) {
         throw new RuntimeException("Interrupted while awaiting process", e);
       }
-      try (var stdout = process.getInputStream();
-           var stderr = process.getErrorStream()) {
+      try (var stdout = process.getInputStream(); var stderr = process.getErrorStream()) {
         switch (process.exitValue()) {
           case 0 -> {
             return new Result.Success(read(stdout));
@@ -251,14 +223,13 @@ class ContentTracking {
           }
           default -> {
             var message = String.format("""
-                    Unexpected error code %d
+                Unexpected error code %d
 
-                    Standard output:
-                    %s
+                Standard output:
+                %s
 
-                    Standard error:
-                    %s""", process.exitValue(),
-                read(stdout), read(stderr));
+                Standard error:
+                %s""", process.exitValue(), read(stdout), read(stderr));
             throw new RuntimeException(message);
           }
         }
@@ -267,16 +238,15 @@ class ContentTracking {
       }
     }
 
+    Optional<SemanticVersion> getVersion() {
+      try {
+        return SemanticVersion.from(await(command("version")).get().message());
+      } catch (RuntimeException e) {
+        return Optional.empty();
+      }
+    }
+
     private sealed interface Result {
-
-      record Success(String message) implements Result {
-      }
-
-      record FatalApplicationError(String message) implements Result {
-      }
-
-      record Failed(String message) implements Result {
-      }
 
       default Success get() {
         if (this instanceof Success s) {
@@ -291,14 +261,12 @@ class ContentTracking {
           throw new RuntimeException("Success expectation not met");
         }
       }
-    }
 
-    Optional<SemanticVersion> getVersion() {
-      try {
-        return SemanticVersion.from(await(command("version")).get().message());
-      } catch (RuntimeException e) {
-        return Optional.empty();
-      }
+      record Success(String message) implements Result {}
+
+      record FatalApplicationError(String message) implements Result {}
+
+      record Failed(String message) implements Result {}
     }
   }
 }

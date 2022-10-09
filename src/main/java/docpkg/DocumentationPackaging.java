@@ -16,15 +16,14 @@ import java.util.regex.Pattern;
 @BoundedContext
 class DocumentationPackaging {
 
-  private static final Logger logger =
-      LoggerFactory.getLogger(DocumentationPackaging.class);
+  private static final Logger logger = LoggerFactory.getLogger(DocumentationPackaging.class);
 
   interface Service {
+
     void publish(Collection<FileDescription> files);
   }
 
-  record FileDescription(Path path) {
-  }
+  record FileDescription(Path path) {}
 
   record PackageName(String value) {
 
@@ -33,8 +32,7 @@ class DocumentationPackaging {
     PackageName {
       Objects.requireNonNull(value);
       if (!pattern.matcher(value).matches())
-        throw new IllegalArgumentException(
-            String.format("Input did not match %s", pattern.pattern()));
+        throw new IllegalArgumentException(String.format("Input did not match %s", pattern.pattern()));
     }
   }
 
@@ -52,11 +50,8 @@ class DocumentationPackaging {
     }
 
     @Risk(scenario = "User has the origin configured not as `origin`")
-    void ensureBranchExistsWithDefaultCommit(BranchName name,
-                                             CommitId id) {
-      content.createBranch(name,
-          new BranchName(
-              String.format("origin/%s", name.value())));
+    void ensureBranchExistsWithDefaultCommit(BranchName name, CommitId id) {
+      content.createBranch(name, new BranchName(String.format("origin/%s", name.value())));
       content.createBranch(name, id);
     }
 
@@ -69,8 +64,7 @@ class DocumentationPackaging {
     }
 
     void createWorkTree(PackageName name) {
-      var branchName = new BranchName(
-          String.format("docpkg/%s", name.value()));
+      var branchName = new BranchName(String.format("docpkg/%s", name.value()));
       FileOperations.removeRecursively(path);
       var commitId = createInitialCommit();
       ensureBranchExistsWithDefaultCommit(branchName, commitId);
@@ -81,8 +75,7 @@ class DocumentationPackaging {
     public void publish(Collection<FileDescription> files) {
       logger.debug("Publishing {}", files);
       files.forEach(d -> content.addFile(path, d.path()));
-      var commitId = content.commit(path,
-          new CommitMessage("docs: new package"));
+      var commitId = content.commit(path, new CommitMessage("docs: new package"));
       logger.debug("Committed: {}", commitId);
     }
   }

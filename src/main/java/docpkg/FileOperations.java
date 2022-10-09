@@ -32,6 +32,7 @@ public class FileOperations {
   }
 
   private static class CopyVisitor extends SimpleFileVisitor<Path> {
+
     final Path from;
     final Path to;
 
@@ -41,15 +42,13 @@ public class FileOperations {
     }
 
     @Override
-    public FileVisitResult preVisitDirectory(
-        Path dir, BasicFileAttributes attrs) throws IOException {
+    public FileVisitResult preVisitDirectory(Path dir, BasicFileAttributes attrs) throws IOException {
       Files.createDirectories(transform(dir));
       return FileVisitResult.CONTINUE;
     }
 
     @Override
-    public FileVisitResult visitFile(
-        Path file, BasicFileAttributes attrs) throws IOException {
+    public FileVisitResult visitFile(Path file, BasicFileAttributes attrs) throws IOException {
       Files.copy(file, transform(file), StandardCopyOption.COPY_ATTRIBUTES);
       return FileVisitResult.CONTINUE;
     }

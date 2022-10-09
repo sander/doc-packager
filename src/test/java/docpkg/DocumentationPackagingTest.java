@@ -26,8 +26,7 @@ public class DocumentationPackagingTest {
   final Path origin = testDirectory.resolve("origin");
   final Path clone = testDirectory.resolve("clone");
 
-  final CommitMessage initialCommitMessage =
-      new CommitMessage("feat: initial commit");
+  final CommitMessage initialCommitMessage = new CommitMessage("feat: initial commit");
 
   @BeforeEach
   void setUp() {
@@ -58,18 +57,14 @@ public class DocumentationPackagingTest {
     assertThrows(NullPointerException.class, () -> new PackageName(null));
 
     var illegal = Stream.of("", "A", "a".repeat(256), "-", "a:b");
-    illegal.forEach(s ->
-        assertThrows(IllegalArgumentException.class, () -> new PackageName(s)));
+    illegal.forEach(s -> assertThrows(IllegalArgumentException.class, () -> new PackageName(s)));
   }
 
   @Test
   @Tag("integration")
   void testPublishing() {
     Service service = new DocumentationPackaging.Live(content, name);
-    var descriptions = Set.of(
-        getResourceFileDescription("docpkg/example/document.md"),
-        getResourceFileDescription("docpkg/example/document-2.md")
-    );
+    var descriptions = Set.of(getResourceFileDescription("docpkg/example/document.md"), getResourceFileDescription("docpkg/example/document-2.md"));
     service.publish(descriptions);
   }
 
