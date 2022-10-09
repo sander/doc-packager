@@ -4,10 +4,7 @@ import java.io.BufferedReader;
 import java.io.IOException;
 import java.io.Reader;
 import java.io.StreamTokenizer;
-import java.util.Arrays;
-import java.util.LinkedList;
-import java.util.List;
-import java.util.Optional;
+import java.util.*;
 
 public class SymbolicExpressions {
 
@@ -87,7 +84,33 @@ public class SymbolicExpressions {
       }
     }
 
-    record Pair(Expression car, Expression cdr) implements Expression {}
+    static Atom atom(String value) {
+      return new Atom(value);
+    }
+
+    static Text text(String value) {
+      return new Text(value);
+    }
+
+    record Pair(Expression car, Expression cdr) implements Expression {
+
+      public Pair {
+        Objects.requireNonNull(car);
+        Objects.requireNonNull(cdr);
+      }
+
+      public List<Expression> toList() {
+        if (cdr.equals(nil)) {
+          return new ArrayList<Expression>(List.of(car));
+        } else if (cdr instanceof Pair p) {
+          var rest = p.toList();
+          rest.add(0, car);
+          return rest;
+        } else {
+          throw new RuntimeException("Not a list");
+        }
+      }
+    }
 
     record Nil() implements Expression {}
 

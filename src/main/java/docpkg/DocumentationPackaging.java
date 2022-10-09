@@ -5,13 +5,21 @@ import docpkg.ContentTracking.CommitId;
 import docpkg.ContentTracking.CommitMessage;
 import docpkg.Design.BoundedContext;
 import docpkg.Design.Risk;
+import docpkg.SymbolicExpressions.Expression.Atom;
+import docpkg.SymbolicExpressions.Expression.Pair;
+import docpkg.SymbolicExpressions.Expression.Text;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
 import java.nio.file.Path;
 import java.util.Collection;
 import java.util.Objects;
+import java.util.Optional;
 import java.util.regex.Pattern;
+import java.util.stream.Collectors;
+import java.util.stream.IntStream;
+
+import static docpkg.SymbolicExpressions.Expression.atom;
 
 @BoundedContext
 class DocumentationPackaging {
@@ -23,18 +31,49 @@ class DocumentationPackaging {
     void publish(Collection<FileDescription> files);
   }
 
+  record Manifest(PackageId id, PackageName title) {
+
+    static Optional<Manifest> of(SymbolicExpressions.Expression expression) {
+      return Optional.of(expression).flatMap(e -> {
+        if (e instanceof Pair p) {
+          return Optional.of(p);
+        } else {
+          return Optional.empty();
+        }
+      }).flatMap(p -> {
+        if (p.car().equals(atom("manifest")) && p.cdr() instanceof Pair c) {
+          var list = c.toList();
+          if (list.size() % 2 != 0) {
+            return Optional.empty();
+          }
+          var pairs = IntStream.range(0, list.size()).boxed().collect(Collectors.groupingBy(e -> e / 2, Collectors.mapping(list::get, Collectors.toList()))).values().stream().collect(Collectors.toMap(l -> l.get(0), l -> l.get(1)));
+          var id = pairs.get(atom(":docpkg/id"));
+          var name = pairs.get(atom(":docpkg/name"));
+          if (id instanceof Atom a && name instanceof Text n) {
+            return Optional.of(new Manifest(new PackageId(a.value()), new PackageName(n.value())));
+          } else {
+            return Optional.empty();
+          }
+        } else {
+          return Optional.empty();
+        }
+      });
+    }
+  }
+
   record FileDescription(Path path) {}
 
-  record PackageName(String value) {
+  record PackageId(String value) {
 
     static Pattern pattern = Pattern.compile("[a-z][a-z-/]{0,19}");
 
-    PackageName {
+    PackageId {
       Objects.requireNonNull(value);
-      if (!pattern.matcher(value).matches())
-        throw new IllegalArgumentException(String.format("Input did not match %s", pattern.pattern()));
+      if (!pattern.matcher(value).matches()) throw new IllegalArgumentException(String.format("Input did not match %s", pattern.pattern()));
     }
   }
+
+  record PackageName(String value) {}
 
   @Risk(scenario = "Memory leaks since the work tree is not cleaned up")
   @Risk(scenario = "User data lost when creating a work tree when one exists")
@@ -43,7 +82,7 @@ class DocumentationPackaging {
     final private ContentTracking.Service content;
     final private Path path = Path.of("target/docpkg");
 
-    Live(ContentTracking.Service content, PackageName name) {
+    Live(ContentTracking.Service content, PackageId name) {
       this.content = content;
 
       createWorkTree(name);
@@ -63,7 +102,7 @@ class DocumentationPackaging {
       return commitId;
     }
 
-    void createWorkTree(PackageName name) {
+    void createWorkTree(PackageId name) {
       var branchName = new BranchName(String.format("docpkg/%s", name.value()));
       FileOperations.removeRecursively(path);
       var commitId = createInitialCommit();

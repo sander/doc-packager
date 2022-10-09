@@ -1,2 +1,3 @@
-(id "EX-001"
- name "Documentation Packager Example Project")
+(manifest
+ :docpkg/id EX-P001
+ :docpkg/name "Documentation Packager Example Project")

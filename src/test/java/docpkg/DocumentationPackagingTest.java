@@ -1,9 +1,7 @@
 package docpkg;
 
 import docpkg.ContentTracking.CommitMessage;
-import docpkg.DocumentationPackaging.FileDescription;
-import docpkg.DocumentationPackaging.PackageName;
-import docpkg.DocumentationPackaging.Service;
+import docpkg.DocumentationPackaging.*;
 import org.junit.jupiter.api.AfterEach;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Tag;
@@ -14,12 +12,13 @@ import java.nio.file.Paths;
 import java.util.Set;
 import java.util.stream.Stream;
 
+import static docpkg.SymbolicExpressions.Expression.*;
 import static java.util.Objects.requireNonNull;
-import static org.junit.jupiter.api.Assertions.assertThrows;
+import static org.junit.jupiter.api.Assertions.*;
 
 public class DocumentationPackagingTest {
 
-  final PackageName name = new PackageName("main");
+  final PackageId name = new PackageId("main");
   final ContentTracking.Service content = new ContentTracking.GitService();
 
   final Path testDirectory = Path.of("target/test-packaging");
@@ -53,11 +52,11 @@ public class DocumentationPackagingTest {
 
   @Test
   void testPackageNameValidation() {
-    Stream.of("a", "a/b", "a-b").forEach(PackageName::new);
-    assertThrows(NullPointerException.class, () -> new PackageName(null));
+    Stream.of("a", "a/b", "a-b").forEach(PackageId::new);
+    assertThrows(NullPointerException.class, () -> new PackageId(null));
 
     var illegal = Stream.of("", "A", "a".repeat(256), "-", "a:b");
-    illegal.forEach(s -> assertThrows(IllegalArgumentException.class, () -> new PackageName(s)));
+    illegal.forEach(s -> assertThrows(IllegalArgumentException.class, () -> new PackageId(s)));
   }
 
   @Test
@@ -66,6 +65,14 @@ public class DocumentationPackagingTest {
     Service service = new DocumentationPackaging.Live(content, name);
     var descriptions = Set.of(getResourceFileDescription("docpkg/example/document.md"), getResourceFileDescription("docpkg/example/document-2.md"));
     service.publish(descriptions);
+  }
+
+  @Test
+  void testManifestParsing() {
+    var in = list(atom("manifest"), atom(":docpkg/id"), atom("id"), atom(":docpkg/name"), text("Name"));
+    var result = Manifest.of(in);
+    assertTrue(result.isPresent());
+    assertEquals(result.get(), new Manifest(new PackageId("id"), new PackageName("Name")));
   }
 
   private Path getResource(String name) {
