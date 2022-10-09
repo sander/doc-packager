@@ -1,14 +1,14 @@
 package docpkg;
 
 import docpkg.SymbolicExpressions.Expression.Atom;
-import docpkg.SymbolicExpressions.Expression.StringAtom;
-import docpkg.SymbolicExpressions.Expression.SymbolicList;
+import docpkg.SymbolicExpressions.Expression.Text;
 import org.junit.jupiter.api.Test;
 
 import java.io.StringReader;
-import java.util.List;
 import java.util.Optional;
 
+import static docpkg.SymbolicExpressions.Expression.list;
+import static docpkg.SymbolicExpressions.Expression.nil;
 import static docpkg.SymbolicExpressions.read;
 import static org.junit.jupiter.api.Assertions.assertEquals;
 
@@ -23,7 +23,7 @@ public class SymbolicExpressionsTest {
   @Test
   void testEmptyList() {
     var input = "()";
-    assertEquals(Optional.of(SymbolicList.empty()), read(new StringReader(input)));
+    assertEquals(Optional.of(nil), read(new StringReader(input)));
   }
 
   @Test
@@ -33,9 +33,9 @@ public class SymbolicExpressionsTest {
 
     var result = SymbolicExpressions.read(new StringReader(input));
 
-    var data1 = new SymbolicList(List.of(new Atom("data"), new StringAtom("quoted data"), new Atom("123"), new Atom("4.5")));
-    var data2 = new SymbolicList(List.of(new Atom("data"), new SymbolicList(List.of(new Atom("!@#"), new SymbolicList(List.of(new Atom("4.5"))), new StringAtom("(more"), new StringAtom("data)")))));
+    var data1 = list(new Atom("data"), new Text("quoted data"), new Atom("123"), new Atom("4.5"));
+    var data2 = list(new Atom("data"), list(new Atom("!@#"), list(new Atom("4.5")), new Text("(more"), new Text("data)")));
 
-    assertEquals(Optional.of(new SymbolicList(List.of(data1, data2))), result);
+    assertEquals(Optional.of(list(data1, data2)), result);
   }
 }

@@ -4,6 +4,7 @@ import java.io.BufferedReader;
 import java.io.IOException;
 import java.io.Reader;
 import java.io.StreamTokenizer;
+import java.util.Arrays;
 import java.util.LinkedList;
 import java.util.List;
 import java.util.Optional;
@@ -49,7 +50,7 @@ public class SymbolicExpressions {
     var rest = input.subList(1, input.size());
     return switch (token.type) {
       case '(' -> parseList(rest);
-      case '"' -> Optional.of(new ParseResult(new Expression.StringAtom(token.text), rest));
+      case '"' -> Optional.of(new ParseResult(new Expression.Text(token.text), rest));
       case StreamTokenizer.TT_WORD -> Optional.of(new ParseResult(new Expression.Atom(token.text), rest));
       default -> throw new RuntimeException(String.format("Unknown token type %d", token.type));
     };
@@ -70,19 +71,27 @@ public class SymbolicExpressions {
         return Optional.empty();
       }
     }
-    return Optional.of(new ParseResult(new Expression.SymbolicList(result), rest.subList(1, rest.size())));
+    var expression = result.size() == 0 ? Expression.nil : Expression.list(result.get(0), result.subList(1, result.size()).toArray(Expression[]::new));
+    return Optional.of(new ParseResult(expression, rest.subList(1, rest.size())));
   }
 
   sealed interface Expression {
 
-    record SymbolicList(List<Expression> value) implements Expression {
+    Nil nil = new Nil();
 
-      static SymbolicList empty() {
-        return new SymbolicList(List.of());
+    static Pair list(Expression head, Expression... tail) {
+      if (tail.length == 0) {
+        return new Pair(head, new Nil());
+      } else {
+        return new Pair(head, list(tail[0], Arrays.copyOfRange(tail, 1, tail.length)));
       }
     }
 
-    record StringAtom(String value) implements Expression {}
+    record Pair(Expression car, Expression cdr) implements Expression {}
+
+    record Nil() implements Expression {}
+
+    record Text(String value) implements Expression {}
 
     record Atom(String value) implements Expression {}
   }
