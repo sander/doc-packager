@@ -257,7 +257,7 @@ class ContentTracking {
       }
 
       default void expectSuccess() {
-        if (!(this instanceof Success s)) {
+        if (!(this instanceof Success)) {
           throw new RuntimeException("Success expectation not met");
         }
       }
