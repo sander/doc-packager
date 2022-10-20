@@ -92,11 +92,24 @@ public class SymbolicExpressions {
       return new Text(value);
     }
 
+    boolean isList();
+
     record Pair(Expression car, Expression cdr) implements Expression {
 
       public Pair {
         Objects.requireNonNull(car);
         Objects.requireNonNull(cdr);
+      }
+
+      @Override
+      public boolean isList() {
+        if (cdr.equals(nil)) {
+          return true;
+        } else if (cdr instanceof Pair p) {
+          return p.isList();
+        } else {
+          return false;
+        }
       }
 
       public List<Expression> toList() {
@@ -112,11 +125,29 @@ public class SymbolicExpressions {
       }
     }
 
-    record Nil() implements Expression {}
+    record Nil() implements Expression {
 
-    record Text(String value) implements Expression {}
+      @Override
+      public boolean isList() {
+        return true;
+      }
+    }
 
-    record Atom(String value) implements Expression {}
+    record Text(String value) implements Expression {
+
+      @Override
+      public boolean isList() {
+        return false;
+      }
+    }
+
+    record Atom(String value) implements Expression {
+
+      @Override
+      public boolean isList() {
+        return false;
+      }
+    }
   }
 
   record ParseResult(Expression expression, List<Token> rest) {}

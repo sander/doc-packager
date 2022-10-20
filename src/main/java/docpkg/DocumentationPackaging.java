@@ -5,6 +5,7 @@ import docpkg.ContentTracking.CommitId;
 import docpkg.ContentTracking.CommitMessage;
 import docpkg.Design.BoundedContext;
 import docpkg.Design.Risk;
+import docpkg.SymbolicExpressions.Expression;
 import docpkg.SymbolicExpressions.Expression.Atom;
 import docpkg.SymbolicExpressions.Expression.Pair;
 import docpkg.SymbolicExpressions.Expression.Text;
@@ -12,9 +13,7 @@ import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
 import java.nio.file.Path;
-import java.util.Collection;
-import java.util.Objects;
-import java.util.Optional;
+import java.util.*;
 import java.util.regex.Pattern;
 import java.util.stream.Collectors;
 import java.util.stream.IntStream;
@@ -31,9 +30,9 @@ class DocumentationPackaging {
     void publish(Collection<FileDescription> files);
   }
 
-  record Manifest(PackageId id, PackageName title) {
+  record Manifest(PackageId id, PackageName title, Set<FileDescription> files) {
 
-    static Optional<Manifest> of(SymbolicExpressions.Expression expression) {
+    static Optional<Manifest> of(Expression expression) {
       return Optional.of(expression).flatMap(e -> {
         if (e instanceof Pair p) {
           return Optional.of(p);
@@ -47,11 +46,21 @@ class DocumentationPackaging {
             return Optional.empty();
           }
           var pairs = IntStream.range(0, list.size()).boxed().collect(Collectors.groupingBy(e -> e / 2, Collectors.mapping(list::get, Collectors.toList()))).values().stream().collect(Collectors.toMap(l -> l.get(0), l -> l.get(1)));
-          var id = pairs.get(atom(":docpkg/id"));
-          var name = pairs.get(atom(":docpkg/name"));
-          if (id instanceof Atom a && name instanceof Text n) {
-            return Optional.of(new Manifest(new PackageId(a.value()), new PackageName(n.value())));
+          var id = pairs.get(atom(":id"));
+          var name = pairs.get(atom(":name"));
+          var paths = pairs.get(atom(":paths"));
+          if (id instanceof Atom a && name instanceof Text n && paths.isList()) {
+            var expressionList = paths instanceof Pair pair ? pair.toList() : List.<Expression>of();
+            var maybePathList = expressionList.stream().map(item -> item instanceof Text s ? Optional.of(s).flatMap(path -> FileDescription.of(Path.of(path.value()))) : Optional.<FileDescription>empty()).toList();
+            if (maybePathList.stream().allMatch(Optional::isPresent)) {
+              var pathList = maybePathList.stream().flatMap(Optional::stream).collect(Collectors.toSet());
+              return Optional.of(new Manifest(new PackageId(a.value()), new PackageName(n.value()), pathList));
+            } else {
+              logger.debug("Not well-formed: {}", maybePathList);
+              return Optional.empty();
+            }
           } else {
+            logger.debug("Not well-formed: {}", pairs);
             return Optional.empty();
           }
         } else {
@@ -61,7 +70,12 @@ class DocumentationPackaging {
     }
   }
 
-  record FileDescription(Path path) {}
+  record FileDescription(Path path) {
+
+    public static Optional<FileDescription> of(Path path) {
+      return Optional.of(new FileDescription(path));
+    }
+  }
 
   record PackageId(String value) {
 

@@ -69,10 +69,15 @@ public class DocumentationPackagingTest {
 
   @Test
   void testManifestParsing() {
-    var in = list(atom("manifest"), atom(":docpkg/id"), atom("id"), atom(":docpkg/name"), text("Name"));
+    var in = list(
+        atom("manifest"),
+        atom(":id"), atom("id"),
+        atom(":name"), text("Name"),
+        atom(":paths"), list(text("path1"), text("path2/sub-path"))
+    );
     var result = Manifest.of(in);
     assertTrue(result.isPresent());
-    assertEquals(result.get(), new Manifest(new PackageId("id"), new PackageName("Name")));
+    assertEquals(result.get(), new Manifest(new PackageId("id"), new PackageName("Name"), Set.of(new FileDescription(Path.of("path1")), new FileDescription(Path.of("path2/sub-path")))));
   }
 
   private Path getResource(String name) {
