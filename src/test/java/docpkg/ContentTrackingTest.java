@@ -4,9 +4,13 @@ import org.junit.jupiter.api.Assertions;
 import org.junit.jupiter.api.Tag;
 import org.junit.jupiter.api.Test;
 
+import java.io.IOException;
+import java.nio.file.Files;
+import java.nio.file.Path;
 import java.util.Optional;
 import java.util.stream.Stream;
 
+import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.junit.jupiter.api.Assertions.assertTrue;
 
 public class ContentTrackingTest {
@@ -30,5 +34,20 @@ public class ContentTrackingTest {
         .map(ContentTracking.SemanticVersion::from)
         .map(Optional::isPresent)
         .forEach(Assertions::assertTrue);
+  }
+
+  @Test
+  void testGetBranchName() {
+    var path = Path.of("target/test-tracking");
+    var content = new ContentTracking.GitService();
+    FileOperations.removeRecursively(path);
+    try {
+      Files.createDirectories(path);
+    } catch (IOException e) {
+      throw new RuntimeException(e);
+    }
+    content.initialize(path);
+    var name = content.getCurrentBranchName(path);
+    assertEquals("main", name.value());
   }
 }

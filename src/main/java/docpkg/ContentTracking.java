@@ -36,6 +36,8 @@ class ContentTracking {
 
     void addWorkTree(Path worktree, Path path, BranchName name);
 
+    BranchName getCurrentBranchName(Path worktree);
+
     void createBranch(Path worktree, BranchName name, Point point);
 
     @Risk(scenario = "The Path could be anything, not per se a valid WorkTree")
@@ -132,6 +134,11 @@ class ContentTracking {
     @Override
     public void addWorkTree(Path worktree, Path path, BranchName name) {
       await(command("worktree", "add", "--force", path.toString(), name.value()).directory(worktree.toFile())).expectSuccess();
+    }
+
+    @Override
+    public BranchName getCurrentBranchName(Path worktree) {
+      return new BranchName(await(command("branch", "--show-current")).get().message());
     }
 
     @Override
@@ -258,6 +265,7 @@ class ContentTracking {
 
       default void expectSuccess() {
         if (!(this instanceof Success)) {
+          logger.debug("Result: {}", this);
           throw new RuntimeException("Success expectation not met");
         }
       }

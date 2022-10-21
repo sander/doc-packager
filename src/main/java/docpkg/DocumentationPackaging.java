@@ -119,7 +119,8 @@ class DocumentationPackaging {
     }
 
     void createWorkTree(PackageId name) {
-      var branchName = new BranchName(String.format("docpkg/%s", name.value()));
+      var originalBranchName = content.getCurrentBranchName(workingDirectory);
+      var branchName = new BranchName(String.format("docpkg/%s/%s", name.value(), originalBranchName.value()));
       FileOperations.removeRecursively(workingDirectory.resolve(relativeTargetPath));
       var commitId = createInitialCommit();
       ensureBranchExistsWithDefaultCommit(branchName, commitId);
