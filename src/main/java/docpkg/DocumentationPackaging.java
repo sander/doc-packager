@@ -96,10 +96,14 @@ class DocumentationPackaging {
     final private ContentTracking.Service content;
     final private Path workingDirectory;
     final private Path relativeTargetPath = Path.of("target/docpkg");
+    final private BranchName targetBranchName;
 
     Live(ContentTracking.Service content, Path workingDirectory, PackageId name) {
       this.content = content;
       this.workingDirectory = workingDirectory;
+
+      var originalBranchName = content.getCurrentBranchName(workingDirectory);
+      targetBranchName = new BranchName(String.format("docpkg/%s/%s", name.value(), originalBranchName.value()));
 
       createWorkTree(name);
     }
@@ -119,12 +123,10 @@ class DocumentationPackaging {
     }
 
     void createWorkTree(PackageId name) {
-      var originalBranchName = content.getCurrentBranchName(workingDirectory);
-      var branchName = new BranchName(String.format("docpkg/%s/%s", name.value(), originalBranchName.value()));
       FileOperations.removeRecursively(workingDirectory.resolve(relativeTargetPath));
       var commitId = createInitialCommit();
-      ensureBranchExistsWithDefaultCommit(branchName, commitId);
-      content.addWorkTree(workingDirectory, relativeTargetPath, branchName);
+      ensureBranchExistsWithDefaultCommit(targetBranchName, commitId);
+      content.addWorkTree(workingDirectory, relativeTargetPath, targetBranchName);
     }
 
     @Override
@@ -133,6 +135,7 @@ class DocumentationPackaging {
       files.forEach(d -> content.addFile(workingDirectory.resolve(relativeTargetPath), workingDirectory.resolve(d.path()), d.path()));
       var commitId = content.commit(workingDirectory.resolve(relativeTargetPath), new CommitMessage("docs: new package"));
       logger.debug("Committed: {}", commitId);
+      content.publish(workingDirectory, targetBranchName);
     }
 
     @Override

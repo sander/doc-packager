@@ -48,6 +48,8 @@ class ContentTracking {
     CommitId commitTree(Path worktree, ObjectName name);
 
     ObjectName makeTree(Path worktree);
+
+    void publish(Path worktree, BranchName name);
   }
 
   sealed interface Point {
@@ -184,6 +186,12 @@ class ContentTracking {
       var nullDevice = Path.of("/dev/null").toFile();
       var command = command("mktree").redirectInput(nullDevice).directory(worktree.toFile());
       return new ObjectName(await(command).get().message());
+    }
+
+    @Risk(scenario = "User has configured a different origin name")
+    @Override
+    public void publish(Path worktree, BranchName name) {
+      await(command("push", "origin", name.value()).directory(worktree.toFile())).expectSuccess();
     }
 
     private <T> List<T> cons(T head, List<T> tail) {
