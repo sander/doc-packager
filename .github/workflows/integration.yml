@@ -27,10 +27,7 @@ jobs:
           git config --global user.name "github-actions[bot]"
           git config --global user.email "github-actions[bot]@users.noreply.github.com"
       - run: mvn package
-      - run: |
-          mkdir target/jar
-          && cd target/jar
-          && unzip ../docpkg-0.1.0-SNAPSHOT.jar
+      - run: mkdir target/jar && cd target/jar && unzip ../docpkg-0.1.0-SNAPSHOT.jar
       - uses: actions/upload-artifact@v3
         with:
           name: docpkg-0.1.0-SNAPSHOT
