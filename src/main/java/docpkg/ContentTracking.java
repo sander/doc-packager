@@ -36,6 +36,8 @@ class ContentTracking {
 
     void addWorkTree(Path worktree, Path path, BranchName name);
 
+    void removeWorkTree(Path worktree, Path path);
+
     BranchName getCurrentBranchName(Path worktree);
 
     void createBranch(Path worktree, BranchName name, Point point);
@@ -134,6 +136,11 @@ class ContentTracking {
     @Override
     public void addWorkTree(Path worktree, Path path, BranchName name) {
       await(command("worktree", "add", "--force", path.toString(), name.value()).directory(worktree.toFile())).expectSuccess();
+    }
+
+    @Override
+    public void removeWorkTree(Path worktree, Path path) {
+      await(command("worktree", "remove", path.toString()).directory(worktree.toFile())).expectSuccess();
     }
 
     @Override

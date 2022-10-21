@@ -91,7 +91,7 @@ class DocumentationPackaging {
 
   @Risk(scenario = "Memory leaks since the work tree is not cleaned up")
   @Risk(scenario = "User data lost when creating a work tree when one exists")
-  static class Live implements Service {
+  static class Live implements Service, AutoCloseable {
 
     final private ContentTracking.Service content;
     final private Path workingDirectory;
@@ -133,6 +133,11 @@ class DocumentationPackaging {
       files.forEach(d -> content.addFile(workingDirectory.resolve(relativeTargetPath), workingDirectory.resolve(d.path()), d.path()));
       var commitId = content.commit(workingDirectory.resolve(relativeTargetPath), new CommitMessage("docs: new package"));
       logger.debug("Committed: {}", commitId);
+    }
+
+    @Override
+    public void close() {
+      content.removeWorkTree(workingDirectory, relativeTargetPath);
     }
   }
 }

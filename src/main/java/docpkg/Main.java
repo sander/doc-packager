@@ -29,8 +29,9 @@ public class Main {
               logger.debug("Manifest: {}", manifest);
               var content = new ContentTracking.GitService();
               if (manifest.isPresent()) {
-                var packaging = new DocumentationPackaging.Live(content, path, manifest.get().id());
-                packaging.publish(manifest.get().files());
+                try (var packaging = new DocumentationPackaging.Live(content, path, manifest.get().id())) {
+                  packaging.publish(manifest.get().files());
+                }
               } else {
                 System.err.println("Invalid manifest");
               }
