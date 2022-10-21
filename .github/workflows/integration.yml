@@ -14,8 +14,8 @@ jobs:
           args: "check .github/workflows/integration.yml"
   deploy:
     runs-on: ubuntu-latest
-    permissions:
-      packages: write
+    #permissions:
+    #  packages: write
     steps:
       - uses: actions/checkout@2541b1294d2704b0964813337f33b291d3f8596b # ratchet:actions/checkout@v3
       - uses: coursier/cache-action@288585e12960315492c10d496fafb65b57d9a89b # ratchet:coursier/cache-action@v6.3
