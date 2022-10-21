@@ -79,7 +79,7 @@ class DocumentationPackaging {
 
   record PackageId(String value) {
 
-    static Pattern pattern = Pattern.compile("[a-z][a-z-/]{0,19}");
+    static Pattern pattern = Pattern.compile("[a-z][a-z-/0-9]{0,19}");
 
     PackageId {
       Objects.requireNonNull(value);
@@ -94,41 +94,43 @@ class DocumentationPackaging {
   static class Live implements Service {
 
     final private ContentTracking.Service content;
-    final private Path path = Path.of("target/docpkg");
+    final private Path workingDirectory;
+    final private Path relativeTargetPath = Path.of("target/docpkg");
 
-    Live(ContentTracking.Service content, PackageId name) {
+    Live(ContentTracking.Service content, Path workingDirectory, PackageId name) {
       this.content = content;
+      this.workingDirectory = workingDirectory;
 
       createWorkTree(name);
     }
 
     @Risk(scenario = "User has the origin configured not as `origin`")
     void ensureBranchExistsWithDefaultCommit(BranchName name, CommitId id) {
-      content.createBranch(name, new BranchName(String.format("origin/%s", name.value())));
-      content.createBranch(name, id);
+      content.createBranch(workingDirectory, name, new BranchName(String.format("origin/%s", name.value())));
+      content.createBranch(workingDirectory, name, id);
     }
 
     CommitId createInitialCommit() {
-      var treeId = content.makeTree();
+      var treeId = content.makeTree(workingDirectory);
       logger.debug("Committing tree with hash {}", treeId);
-      var commitId = content.commitTree(treeId);
+      var commitId = content.commitTree(workingDirectory, treeId);
       logger.debug("Created commit ID {}", commitId);
       return commitId;
     }
 
     void createWorkTree(PackageId name) {
       var branchName = new BranchName(String.format("docpkg/%s", name.value()));
-      FileOperations.removeRecursively(path);
+      FileOperations.removeRecursively(workingDirectory.resolve(relativeTargetPath));
       var commitId = createInitialCommit();
       ensureBranchExistsWithDefaultCommit(branchName, commitId);
-      content.addWorkTree(path, branchName);
+      content.addWorkTree(workingDirectory, relativeTargetPath, branchName);
     }
 
     @Override
     public void publish(Collection<FileDescription> files) {
       logger.debug("Publishing {}", files);
-      files.forEach(d -> content.addFile(path, d.path()));
-      var commitId = content.commit(path, new CommitMessage("docs: new package"));
+      files.forEach(d -> content.addFile(workingDirectory.resolve(relativeTargetPath), workingDirectory.resolve(d.path()), d.path()));
+      var commitId = content.commit(workingDirectory.resolve(relativeTargetPath), new CommitMessage("docs: new package"));
       logger.debug("Committed: {}", commitId);
     }
   }

@@ -30,20 +30,20 @@ class ContentTracking {
     @Risk(scenario = "Origin could be anything, not per se a valid WorkTree")
     void clone(Path origin, Path worktree);
 
-    void addFile(Path worktree, Path path);
+    void addFile(Path worktree, Path sourcePath, Path targetPath);
 
     void addCurrentWorktree(Path worktree);
 
-    void addWorkTree(Path path, BranchName name);
+    void addWorkTree(Path worktree, Path path, BranchName name);
 
-    void createBranch(BranchName name, Point point);
+    void createBranch(Path worktree, BranchName name, Point point);
 
     @Risk(scenario = "The Path could be anything, not per se a valid WorkTree")
-    Optional<CommitId> commit(Path path, CommitMessage message);
+    Optional<CommitId> commit(Path worktree, CommitMessage message);
 
-    CommitId commitTree(ObjectName name);
+    CommitId commitTree(Path worktree, ObjectName name);
 
-    ObjectName makeTree();
+    ObjectName makeTree(Path worktree);
   }
 
   sealed interface Point {
@@ -106,21 +106,21 @@ class ContentTracking {
     }
 
     @Override
-    public void addFile(Path worktree, Path path) {
-      var target = worktree.resolve(path);
-      logger.debug("Copying from {} to {}", path, target);
+    public void addFile(Path worktree, Path sourcePath, Path targetPath) {
+      var target = worktree.resolve(targetPath);
+      logger.debug("Copying from {} to {}", sourcePath, target);
       try {
         Files.createDirectories(target.getParent());
       } catch (IOException e) {
         throw new RuntimeException("Could not create directories", e);
       }
       try {
-        Files.copy(path, worktree.resolve(path), StandardCopyOption.REPLACE_EXISTING);
+        Files.copy(sourcePath, target, StandardCopyOption.REPLACE_EXISTING);
       } catch (IOException e) {
         throw new RuntimeException("Could not copy file", e);
       }
       logger.debug("Copied");
-      await(command("add", path.toString()).directory(worktree.toFile())).expectSuccess();
+      await(command("add", targetPath.toString()).directory(worktree.toFile())).expectSuccess();
       logger.debug("Added");
     }
 
@@ -130,26 +130,26 @@ class ContentTracking {
     }
 
     @Override
-    public void addWorkTree(Path path, BranchName name) {
-      await(command("worktree", "add", "--force", path.toString(), name.value())).expectSuccess();
+    public void addWorkTree(Path worktree, Path path, BranchName name) {
+      await(command("worktree", "add", "--force", path.toString(), name.value()).directory(worktree.toFile())).expectSuccess();
     }
 
     @Override
     @Risk(scenario = "Git not configured yet for committing")
-    public CommitId commitTree(ObjectName name) {
+    public CommitId commitTree(Path worktree, ObjectName name) {
       var message = "build: new documentation package";
-      var command = command("commit-tree", name.value(), "-m", message);
+      var command = command("commit-tree", name.value(), "-m", message).directory(worktree.toFile());
       return new CommitId(await(command).get().message());
     }
 
     @Override
-    public void createBranch(BranchName name, Point point) {
-      await(command("branch", name.value(), point.value()));
+    public void createBranch(Path worktree, BranchName name, Point point) {
+      await(command("branch", name.value(), point.value()).directory(worktree.toFile()));
     }
 
     @Override
-    public Optional<CommitId> commit(Path path, CommitMessage message) {
-      var result = await(command("commit", "-m", message.value()).directory(path.toFile()));
+    public Optional<CommitId> commit(Path worktree, CommitMessage message) {
+      var result = await(command("commit", "-m", message.value()).directory(worktree.toFile()));
       switch (result) {
         case Result.Success s -> {
           var id = new CommitId(await(command("rev-parse", "HEAD")).get().message());
@@ -166,9 +166,9 @@ class ContentTracking {
 
     @Override
     @Risk(scenario = "User has no POSIX-compliant /dev/null")
-    public ObjectName makeTree() {
+    public ObjectName makeTree(Path worktree) {
       var nullDevice = Path.of("/dev/null").toFile();
-      var command = command("mktree").redirectInput(nullDevice);
+      var command = command("mktree").redirectInput(nullDevice).directory(worktree.toFile());
       return new ObjectName(await(command).get().message());
     }
 

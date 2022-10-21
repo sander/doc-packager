@@ -47,7 +47,7 @@ public class DocumentationPackagingTest {
   @Test
   @Tag("integration")
   void testInitialization() {
-    new DocumentationPackaging.Live(content, name);
+    new DocumentationPackaging.Live(content, clone, name);
   }
 
   @Test
@@ -62,8 +62,8 @@ public class DocumentationPackagingTest {
   @Test
   @Tag("integration")
   void testPublishing() {
-    Service service = new DocumentationPackaging.Live(content, name);
-    var descriptions = Set.of(getResourceFileDescription("docpkg/example/document.md"), getResourceFileDescription("docpkg/example/document-2.md"));
+    Service service = new DocumentationPackaging.Live(content, clone, name);
+    var descriptions = Set.of(new FileDescription(Path.of("document.md")), new FileDescription(Path.of("document-2.md")));
     service.publish(descriptions);
   }
 

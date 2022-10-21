@@ -1,3 +1,4 @@
 (manifest
- :docpkg/id EX-P001
- :docpkg/name "Documentation Packager Example Project")
+ :id ex-p001
+ :name "Documentation Packager Example Project"
+ :paths ("document.md" "document-2.md"))

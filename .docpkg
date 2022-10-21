@@ -1,0 +1,4 @@
+(manifest
+ :id docpkg
+ :name "Documentation Packager"
+ :paths ("README.md"))
