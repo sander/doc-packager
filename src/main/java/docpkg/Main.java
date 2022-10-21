@@ -9,7 +9,7 @@ import java.io.FileReader;
 import java.nio.file.Path;
 import java.util.Optional;
 
-public class Main {
+class Main {
 
   private static final Logger logger = LoggerFactory.getLogger(Main.class);
   private static final String defaultVersion = "(Not packaged)";

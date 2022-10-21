@@ -5,7 +5,7 @@ import java.nio.file.*;
 import java.nio.file.attribute.BasicFileAttributes;
 import java.util.Comparator;
 
-public class FileOperations {
+class FileOperations {
 
   static void removeRecursively(Path path) {
     if (Files.exists(path)) {

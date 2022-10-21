@@ -6,7 +6,7 @@ import java.io.Reader;
 import java.io.StreamTokenizer;
 import java.util.*;
 
-public class SymbolicExpressions {
+class SymbolicExpressions {
 
   static Optional<Expression> read(Reader reader) {
     return parse(tokenize(reader));
