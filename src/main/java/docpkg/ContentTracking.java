@@ -237,7 +237,7 @@ class ContentTracking {
             return new Result.Success(read(stdout));
           }
           case 1 -> {
-            logger.debug("Error message was: {}", read(stderr));
+            logger.debug("Error message was: {}", read(stderr).replace("\n", "\\n"));
             return new Result.Failed(read(stdout));
           }
           case 128 -> {
