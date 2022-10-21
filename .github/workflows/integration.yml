@@ -28,10 +28,10 @@ jobs:
           java-version: "19"
           cache: maven
       - run: |
-          git config --global user.name "github-actions[bot]"
-          git config --global user.email "github-actions[bot]@users.noreply.github.com"
-      - run: mvn --batch-mode deploy
-        env:
-          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+          git config --global user.name "github-actions"
+          git config --global user.email "github-actions@github.com"
+      #- run: mvn --batch-mode deploy
+      #  env:
+      #    GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
       - run: mvn package
       - run: scala-cli run scripts/package.sc
