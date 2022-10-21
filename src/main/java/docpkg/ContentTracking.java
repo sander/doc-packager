@@ -231,11 +231,13 @@ class ContentTracking {
         throw new RuntimeException("Interrupted while awaiting process", e);
       }
       try (var stdout = process.getInputStream(); var stderr = process.getErrorStream()) {
+        logger.debug("Got exit value {}", process.exitValue());
         switch (process.exitValue()) {
           case 0 -> {
             return new Result.Success(read(stdout));
           }
           case 1 -> {
+            logger.debug("Error message was: {}", read(stderr));
             return new Result.Failed(read(stdout));
           }
           case 128 -> {
