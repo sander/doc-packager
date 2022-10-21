@@ -166,17 +166,15 @@ class ContentTracking {
     @Override
     public Optional<CommitId> commit(Path worktree, CommitMessage message) {
       var result = await(command("commit", "-m", message.value()).directory(worktree.toFile()));
-      switch (result) {
-        case Result.Success s -> {
-          var id = new CommitId(await(command("rev-parse", "HEAD")).get().message());
-          logger.debug("Committed {}", id);
-          return Optional.of(id);
-        }
-        case Result.Failed f -> {
-          logger.debug("Commit failed: {}", f.message().replace("\n", "\\n"));
-          return Optional.empty();
-        }
-        default -> throw new RuntimeException(String.format("Unexpected commit result: %s", result));
+      if (result instanceof Result.Success) {
+        var id = new CommitId(await(command("rev-parse", "HEAD")).get().message());
+        logger.debug("Committed {}", id);
+        return Optional.of(id);
+      } else if (result instanceof Result.Failed) {
+        logger.debug("Commit failed: {}", ((Result.Failed) result).message().replace("\n", "\\n"));
+        return Optional.empty();
+      } else {
+        throw new RuntimeException(String.format("Unexpected commit result: %s", result));
       }
     }
 
