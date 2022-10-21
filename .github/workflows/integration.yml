@@ -16,6 +16,8 @@ jobs:
     runs-on: ubuntu-latest
     steps:
       - uses: actions/checkout@2541b1294d2704b0964813337f33b291d3f8596b # ratchet:actions/checkout@v3
+        with:
+          fetch-depth: 0
       - uses: coursier/cache-action@288585e12960315492c10d496fafb65b57d9a89b # ratchet:coursier/cache-action@v6.3
       - uses: VirtusLab/scala-cli-setup@06d19f37f67791511cd581eab50bc7c63b60cb37 # ratchet:VirtusLab/scala-cli-setup@v0.1
       - uses: actions/setup-java@d854b6da19cdadd9a010605529e522c2393ebd38 # ratchet:actions/setup-java@v3
