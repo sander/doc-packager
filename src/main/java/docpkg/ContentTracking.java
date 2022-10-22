@@ -94,6 +94,7 @@ class ContentTracking {
   static class GitService implements Service {
 
     public static final SemanticVersion minimumVersion = new SemanticVersion("git", 2, 37, 0);
+    public static final BranchName initialBranchName = new BranchName("main");
 
     public GitService() {
       if (getVersion().stream().peek(v -> logger.debug("Parsed as semantic version: {}", v)).noneMatch(minimumVersion::isMetBy)) {
@@ -103,7 +104,7 @@ class ContentTracking {
 
     @Override
     public void initialize(Path worktree) {
-      await(command("init", worktree.toString())).expectSuccess();
+      await(command("init", "--initial-branch=" + initialBranchName.value(), worktree.toString())).expectSuccess();
     }
 
     @Override

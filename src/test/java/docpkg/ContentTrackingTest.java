@@ -49,7 +49,7 @@ public class ContentTrackingTest {
     try {
       content.initialize(path);
       var name = content.getCurrentBranchName(path);
-      assertEquals("main", name.value());
+      assertEquals(ContentTracking.GitService.initialBranchName, name);
     } finally {
       FileOperations.removeRecursively(path);
     }
