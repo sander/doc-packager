@@ -147,7 +147,7 @@ class ContentTracking {
 
     @Override
     public BranchName getCurrentBranchName(Path worktree) {
-      return new BranchName(await(command("branch", "--show-current")).get().message());
+      return new BranchName(await(command("branch", "--show-current").directory(worktree.toFile())).get().message());
     }
 
     @Override

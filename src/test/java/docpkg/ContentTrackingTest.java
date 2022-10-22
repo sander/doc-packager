@@ -46,8 +46,12 @@ public class ContentTrackingTest {
     } catch (IOException e) {
       throw new RuntimeException(e);
     }
-    content.initialize(path);
-    var name = content.getCurrentBranchName(path);
-    assertEquals("main", name.value());
+    try {
+      content.initialize(path);
+      var name = content.getCurrentBranchName(path);
+      assertEquals("main", name.value());
+    } finally {
+      FileOperations.removeRecursively(path);
+    }
   }
 }
