@@ -103,10 +103,10 @@ class DocumentationPackaging {
       this.workingDirectory = workingDirectory;
 
       var originalBranchName = content.getCurrentBranchName(workingDirectory);
-      if (originalBranchName.value().equals("")) {
+      if (originalBranchName.value().length() == 0) {
         originalBranchName = new BranchName(System.getenv("BRANCH_NAME"));
       }
-      if (originalBranchName.value().equals("")) {
+      if (originalBranchName.value().length() == 0) {
         throw new RuntimeException("Could not get branch name");
       }
       targetBranchName = new BranchName(String.format("docpkg/%s/%s", name.value(), originalBranchName.value()));
@@ -114,7 +114,7 @@ class DocumentationPackaging {
       logger.debug("Working directory: {}", workingDirectory.toAbsolutePath());
       logger.debug("Target branch: {}", targetBranchName);
 
-      createWorkTree(name);
+      createWorkTree();
     }
 
     @Risk(scenario = "User has the origin configured not as `origin`")
@@ -131,7 +131,7 @@ class DocumentationPackaging {
       return commitId;
     }
 
-    void createWorkTree(PackageId name) {
+    void createWorkTree() {
       FileOperations.removeRecursively(workingDirectory.resolve(relativeTargetPath));
       var commitId = createInitialCommit();
       ensureBranchExistsWithDefaultCommit(targetBranchName, commitId);
