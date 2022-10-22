@@ -4,7 +4,6 @@ import docpkg.DocumentationPackaging.Manifest;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
-import java.io.FileNotFoundException;
 import java.io.FileReader;
 import java.io.IOException;
 import java.nio.file.Path;
@@ -36,10 +35,8 @@ class Main {
               } else {
                 System.err.println("Invalid manifest");
               }
-            } catch (FileNotFoundException e) {
-              System.err.println("No manifest found");
             } catch (IOException e) {
-              throw new RuntimeException(e);
+              System.err.println("Could not read manifest");
             }
           } else {
             System.err.println("Specify the path");
