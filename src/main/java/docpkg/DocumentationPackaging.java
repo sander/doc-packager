@@ -105,6 +105,9 @@ class DocumentationPackaging {
       var originalBranchName = content.getCurrentBranchName(workingDirectory);
       targetBranchName = new BranchName(String.format("docpkg/%s/%s", name.value(), originalBranchName.value()));
 
+      logger.debug("Working directory: {}", workingDirectory.toAbsolutePath());
+      logger.debug("Target branch: {}", targetBranchName);
+
       createWorkTree(name);
     }
 
