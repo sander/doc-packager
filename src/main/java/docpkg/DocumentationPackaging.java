@@ -114,7 +114,7 @@ class DocumentationPackaging {
       logger.debug("Working directory: {}", workingDirectory.toAbsolutePath());
       logger.debug("Target branch: {}", targetBranchName);
 
-      createWorkTree(name);
+      createWorkTree();
     }
 
     @Risk(scenario = "User has the origin configured not as `origin`")
@@ -131,7 +131,7 @@ class DocumentationPackaging {
       return commitId;
     }
 
-    void createWorkTree(PackageId name) {
+    void createWorkTree() {
       FileOperations.removeRecursively(workingDirectory.resolve(relativeTargetPath));
       var commitId = createInitialCommit();
       ensureBranchExistsWithDefaultCommit(targetBranchName, commitId);

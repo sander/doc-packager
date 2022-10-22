@@ -6,6 +6,7 @@ import org.slf4j.LoggerFactory;
 
 import java.io.FileNotFoundException;
 import java.io.FileReader;
+import java.io.IOException;
 import java.nio.file.Path;
 import java.util.Optional;
 
@@ -23,9 +24,9 @@ class Main {
         case "publish" -> {
           if (args.length == 2) {
             logger.debug("Invoking the publish command");
-            try {
-              var path = Path.of(args[1]);
-              var manifest = SymbolicExpressions.read(new FileReader(path.resolve(".docpkg").toFile())).flatMap(Manifest::of);
+            var path = Path.of(args[1]);
+            try (var reader = new FileReader(path.resolve(".docpkg").toFile())) {
+              var manifest = SymbolicExpressions.read(reader).flatMap(Manifest::of);
               logger.debug("Manifest: {}", manifest);
               var content = new ContentTracking.GitService();
               if (manifest.isPresent()) {
@@ -37,6 +38,8 @@ class Main {
               }
             } catch (FileNotFoundException e) {
               System.err.println("No manifest found");
+            } catch (IOException e) {
+              throw new RuntimeException(e);
             }
           } else {
             System.err.println("Specify the path");
