@@ -18,7 +18,7 @@ import static org.junit.jupiter.api.Assertions.*;
 
 public class DocumentationPackagingTest {
 
-  final PackageId name = new PackageId("main");
+  final PackageId name = new PackageId("test-package");
   final ContentTracking.Service content = new ContentTracking.GitService();
 
   final Path testDirectory = Path.of("target/test-packaging");
