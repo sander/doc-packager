@@ -1,3 +1,14 @@
+# IntelliJ
+*.iml
 .idea/
+
+# macOS
 .DS_Store
+
+# Maven
 target/
+
+# Scala CLI
+.scala-build/
+.metals/
+.bsp/
