@@ -34,6 +34,8 @@ jobs:
           name: docpkg
           path: target/docpkg-0.1.0-SNAPSHOT.jar
       - run: mvn --batch-mode deploy
+        env:
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
       - run: scala-cli run scripts/package.sc
         env:
          BRANCH_NAME: ${{ github.head_ref || github.ref_name }}
