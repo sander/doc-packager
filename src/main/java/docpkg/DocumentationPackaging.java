@@ -103,10 +103,10 @@ class DocumentationPackaging {
       this.workingDirectory = workingDirectory;
 
       var originalBranchName = content.getCurrentBranchName(workingDirectory);
-      if (originalBranchName.value().equals("")) {
+      if (originalBranchName.value().length() == 0) {
         originalBranchName = new BranchName(System.getenv("BRANCH_NAME"));
       }
-      if (originalBranchName.value().equals("")) {
+      if (originalBranchName.value().length() == 0) {
         throw new RuntimeException("Could not get branch name");
       }
       targetBranchName = new BranchName(String.format("docpkg/%s/%s", name.value(), originalBranchName.value()));
