@@ -2,6 +2,7 @@ use std::fs;
 use std::path::PathBuf;
 
 use clap::{arg, Command};
+use docpkg::risk;
 use serde_derive::Deserialize;
 use toml::Value;
 
@@ -14,6 +15,7 @@ struct Config {
     files: Vec<PathBuf>,
 }
 
+#[risk("Some risk annotation")]
 fn cli() -> Command {
     Command::new("docpkg")
         .about("Documentation Packager")
