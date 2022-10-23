@@ -1,0 +1,5 @@
+id = "docpkg"
+name = "Documentation Packager"
+files = [
+  "README.md"
+]
