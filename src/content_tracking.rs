@@ -1,6 +1,7 @@
 use std::path::PathBuf;
-use std::process::Command;
+use std::process::{Command, ExitStatus};
 use std::{fs, str};
+use std::os::unix::prelude::ExitStatusExt;
 use std::str::FromStr;
 
 use regex::Regex;
@@ -22,11 +23,10 @@ trait ContentTrackingService {
 
     fn remove_work_tree(&self, path: PathBuf);
 
-    // fn create_branch<P: Point>(&self, name: BranchName, point: P);
     fn create_branch(&self, name: BranchName, point: impl Point);
 
-    // Risk: the path could be anything, not per se a valid worktree.
-    // fn commit(&self, message: CommitMessage) -> Option<CommitId>;
+    /// Risk: the path could be anything, not per se a valid worktree.
+    fn commit(&self, message: CommitMessage) -> Option<CommitId>;
 
     // fn commit_tree(&self, name: ObjectName) -> CommitId;
     // fn make_tree(&self) -> ObjectName;
@@ -147,6 +147,19 @@ impl ContentTrackingService for Git {
 
     fn create_branch(&self, name: BranchName, point: impl Point) {
         Command::new("git").args(["branch", &name.0, point.reference()]).current_dir(&self.worktree).output().unwrap();
+    }
+
+    fn commit(&self, message: CommitMessage) -> Option<CommitId> {
+        let result = Command::new("git").args(["commit", "-m", &message.0]).current_dir(&self.worktree).output().unwrap();
+        if result.status.success() {
+            let out = Command::new("git").args(["rev-parse", "HEAD"]).current_dir(&self.worktree).output().unwrap().stdout;
+            let id = CommitId(str::from_utf8(&out).unwrap().to_string().replace("\n", ""));
+            Some(id)
+        } else if result.status == ExitStatus::from_raw(1) {
+            None
+        } else {
+            panic!("Unexpected status");
+        }
     }
 }
 
