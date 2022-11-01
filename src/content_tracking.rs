@@ -1,6 +1,6 @@
 use std::path::PathBuf;
 use std::process::Command;
-use std::str;
+use std::{fs, str};
 use std::str::FromStr;
 
 use regex::Regex;
@@ -99,7 +99,7 @@ struct Git {
 }
 
 impl Git {
-    fn new(worktree: PathBuf) -> Git {
+    fn new(worktree: PathBuf) -> impl ContentTrackingService {
         Git { worktree }
     }
 }
@@ -121,7 +121,10 @@ impl ContentTrackingService for Git {
     }
 
     fn add_file(&self, source: PathBuf, target: PathBuf) {
-        todo!()
+        let target = self.worktree.join(target);
+        fs::create_dir_all(target.parent().unwrap()).unwrap();
+        fs::copy(source, target.clone()).unwrap();
+        Command::new("git").args(["add", target.to_str().unwrap()]).current_dir(&self.worktree).output().unwrap();
     }
 }
 
@@ -157,12 +160,36 @@ mod tests {
 
     #[test]
     fn get_current_branch_name() {
-        let path = PathBuf::from("target/test-tracking");
-        let _ = fs::remove_dir_all(path.clone());
-        let _ = fs::create_dir_all(path.clone());
+        let path = PathBuf::from("target/test-tracking-get-current-branch-name");
+
+        fs::remove_dir_all(path.clone()).ok();
+        fs::create_dir_all(path.clone()).unwrap();
+
         let git = Git::new(path.clone());
         git.initialize();
         assert_eq!(git.get_current_branch_name().0, INITIAL_BRANCH_NAME);
-        let _ = fs::remove_dir_all(path.clone());
+
+        fs::remove_dir_all(path.clone()).unwrap();
+    }
+
+    #[test]
+    fn add_file() {
+        let main_path = PathBuf::from("target/test-tracking-add-file");
+        let file_path = main_path.clone().join("file");
+        let content_path = main_path.clone().join("content");
+        let target_path = PathBuf::from("foo/bar");
+        let content = "Hello World!";
+
+        fs::remove_dir_all(main_path.clone()).ok();
+        fs::create_dir_all(content_path.clone()).unwrap();
+        fs::write(file_path.clone(), content).unwrap();
+
+        let git = Git::new(content_path.clone());
+        git.initialize();
+        git.add_file(file_path.clone(), target_path.clone());
+
+        assert_eq!(fs::read_to_string(content_path.clone().join(target_path)).unwrap(), content);
+
+        fs::remove_dir_all(main_path.clone()).unwrap();
     }
 }
