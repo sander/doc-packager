@@ -32,7 +32,7 @@ trait ContentTrackingService {
 
     fn make_tree(&self) -> ObjectName;
 
-    // fn publish(&self, name: BranchName);
+    fn push_to_origin(&self, name: BranchName);
 }
 
 trait Point {
@@ -173,6 +173,10 @@ impl ContentTrackingService for Git {
     fn make_tree(&self) -> ObjectName {
         let command = Command::new("git").args(["mktree"]).current_dir(&self.worktree).stdin(Stdio::null()).output().unwrap().stdout;
         ObjectName(str::from_utf8(&command).unwrap().to_string().replace("\n", ""))
+    }
+
+    fn push_to_origin(&self, name: BranchName) {
+        Command::new("git").args(["push", "origin", &name.0]).current_dir(&self.worktree).output().unwrap();
     }
 }
 
