@@ -16,7 +16,8 @@ trait ContentTrackingService {
 
     fn add_current_worktree(&self);
 
-    // fn add_worktree(&self, path: &Path, name: BranchName);
+    fn add_worktree(&self, path: PathBuf, name: BranchName);
+
     // fn remove_work_tree(&self, path: &Path);
     // fn create_branch<P: Point>(&self, name: BranchName, point: P);
 
@@ -130,6 +131,10 @@ impl ContentTrackingService for Git {
 
     fn add_current_worktree(&self) {
         Command::new("git").args(["add", "."]).current_dir(&self.worktree).output().unwrap();
+    }
+
+    fn add_worktree(&self, path: PathBuf, name: BranchName) {
+        Command::new("git").args(["worktree", "add", "--force", path.to_str().unwrap(), &name.0]).current_dir(&self.worktree).output().unwrap();
     }
 }
 
