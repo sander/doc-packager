@@ -1,37 +1,37 @@
-use docpkg::risk;
-use regex::Regex;
 use std::path::Path;
 use std::process::Command;
 use std::str;
 use std::str::FromStr;
 
-trait ContentTrackingService {
-    fn initialize(&self, worktree: Path);
+use regex::Regex;
 
-    #[risk("Origin could be anything, not per se a valid worktree")]
-    fn clone(&self, origin: Path, worktree: Path);
+trait ContentTrackingService<'a> {
+    fn initialize(&self);
+    fn get_current_branch_name(&self) -> BranchName;
 
-    fn add_file(&self, worktree: Path, source: Path, target: Path);
-    fn add_current_worktree(&self, worktree: Path);
-    fn add_worktree(&self, worktree: Path, path: Path, name: BranchName);
-    fn remove_work_tree(&self, worktree: Path, path: Path);
-    fn get_current_branch_name(&self, worktree: Path) -> BranchName;
-    fn create_branch<P: Point>(&self, worktree: Path, name: BranchName, point: P);
+    // Risk: origin could be anything, not per se a valid worktree.
+    // fn clone(&self, origin: &Path);
 
-    #[risk("The path could be anything, not per se a valid worktree")]
-    fn commit(&self, worktree: Path, message: CommitMessage) -> Option<CommitId>;
+    // fn add_file(&self, source: &Path, target: &Path);
+    // fn add_current_worktree(&self);
+    // fn add_worktree(&self, path: &Path, name: BranchName);
+    // fn remove_work_tree(&self, path: &Path);
+    // fn create_branch<P: Point>(&self, name: BranchName, point: P);
 
-    fn commit_tree(&self, worktree: Path, name: ObjectName) -> CommitId;
-    fn make_tree(&self, worktree: Path) -> ObjectName;
-    fn publish(&self, worktree: Path, name: BranchName);
+    // Risk: the path could be anything, not per se a valid worktree.
+    // fn commit(&self, message: CommitMessage) -> Option<CommitId>;
+
+    // fn commit_tree(&self, name: ObjectName) -> CommitId;
+    // fn make_tree(&self) -> ObjectName;
+    // fn publish(&self, name: BranchName);
 }
 
 trait Point {
     fn reference(&self) -> &str;
 }
 
-#[derive(Debug)]
-pub struct BranchName(String);
+#[derive(Debug, PartialEq)]
+struct BranchName(String);
 
 impl Point for BranchName {
     fn reference(self: &Self) -> &str {
@@ -40,7 +40,7 @@ impl Point for BranchName {
 }
 
 #[derive(Debug)]
-pub struct CommitId(String);
+struct CommitId(String);
 
 impl Point for CommitId {
     fn reference(self: &Self) -> &str {
@@ -48,12 +48,12 @@ impl Point for CommitId {
     }
 }
 
-pub struct ObjectName(String);
+struct ObjectName(String);
 
-pub struct CommitMessage(String);
+struct CommitMessage(String);
 
 #[derive(Debug)]
-pub struct SemanticVersion {
+struct SemanticVersion {
     name: String,
     major: u16,
     minor: u16,
@@ -75,7 +75,85 @@ impl FromStr for SemanticVersion {
     }
 }
 
-pub fn get_version() -> Option<SemanticVersion> {
+impl SemanticVersion {
+    fn is_met_by(self: &Self, candidate: SemanticVersion) -> bool {
+        let name_matches = self.name == candidate.name;
+        let compatible_design = self.major == candidate.major && self.minor <= candidate.minor;
+        name_matches && compatible_design && (self.minor < candidate.minor || self.patch <= candidate.patch)
+    }
+
+    fn new(name: &str, major: u16, minor: u16, patch: u16) -> SemanticVersion {
+        SemanticVersion { name: name.to_string(), major, minor, patch }
+    }
+}
+
+fn get_version() -> Option<SemanticVersion> {
     let output = Command::new("git").args(["version"]).output().ok()?;
     str::from_utf8(&output.stdout).ok()?.parse().ok()
+}
+
+#[derive(Debug)]
+struct Git<'a> {
+    worktree: &'a Path,
+}
+
+impl Git<'_> {
+    fn new(worktree: &Path) -> Git {
+        Git { worktree }
+    }
+}
+
+static INITIAL_BRANCH_NAME: &str = "main";
+
+impl<'a> ContentTrackingService<'a> for Git<'a> {
+    fn initialize(&self) {
+        Command::new("git").args(["init", &format!("--initial-branch={}", INITIAL_BRANCH_NAME)]).current_dir(self.worktree).output().unwrap();
+    }
+
+    fn get_current_branch_name(&self) -> BranchName {
+        let out = Command::new("git").args(["branch", "--show-current"]).current_dir(self.worktree).output().unwrap().stdout;
+        BranchName(str::from_utf8(&out).unwrap().to_string().replace("\n", ""))
+    }
+}
+
+#[cfg(test)]
+mod tests {
+    use std::fs;
+
+    use super::*;
+
+    #[test]
+    fn get_version_assuming_git_2_is_installed() {
+        let version = get_version();
+        assert!(version.is_some());
+        assert_eq!(version.unwrap().major, 2);
+    }
+
+    #[test]
+    fn semantic_version_comparison() {
+        let requirement = SemanticVersion::new("git", 2, 37, 0);
+        let installed_correct = SemanticVersion::new("git", 2, 37, 3);
+        let installed_incorrect = SemanticVersion::new("git", 3, 37, 3);
+        assert!(requirement.is_met_by(installed_correct));
+        assert!(!requirement.is_met_by(installed_incorrect));
+    }
+
+    #[test]
+    fn semantic_version_parsing() {
+        let correct_lines = ["git version 2.37.0 (Apple Git-136)", "git version 2.37.0"];
+        for line in correct_lines {
+            assert!(SemanticVersion::from_str(line).is_ok());
+        }
+    }
+
+    #[test]
+    fn get_branch_name() {
+        let path = Path::new("target/test-tracking");
+        let _ = fs::remove_dir_all(path);
+        let _ = fs::create_dir_all(path);
+        let git = Git::new(path);
+        git.initialize();
+        assert_eq!(git.get_current_branch_name().0, INITIAL_BRANCH_NAME);
+        let _ = fs::remove_dir_all(path);
+    }
 }

@@ -1,12 +1,14 @@
+// #![warn(missing_docs)]
+
 use std::fs;
 use std::path::PathBuf;
 
 use clap::{arg, Command};
-use docpkg::risk;
+use docpkg::content_tracking;
 use serde_derive::Deserialize;
 use toml::Value;
 
-mod content_tracking;
+// extern crate lib;
 
 #[derive(Deserialize, Debug)]
 struct Config {
@@ -15,7 +17,7 @@ struct Config {
     files: Vec<PathBuf>,
 }
 
-#[risk("Some risk annotation")]
+// #[risk("Some risk annotation")]
 fn cli() -> Command {
     Command::new("docpkg")
         .about("Documentation Packager")
@@ -29,7 +31,6 @@ fn cli() -> Command {
 }
 
 fn main() {
-
     let contents = fs::read_to_string("Docpkg.toml").unwrap();
     let value: Config = toml::from_str(&contents).unwrap();
     println!("Value: {:?}", value);
