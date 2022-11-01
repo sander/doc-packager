@@ -23,6 +23,7 @@ trait ContentTrackingService {
     fn remove_work_tree(&self, path: PathBuf);
 
     // fn create_branch<P: Point>(&self, name: BranchName, point: P);
+    fn create_branch(&self, name: BranchName, point: impl Point);
 
     // Risk: the path could be anything, not per se a valid worktree.
     // fn commit(&self, message: CommitMessage) -> Option<CommitId>;
@@ -142,6 +143,10 @@ impl ContentTrackingService for Git {
 
     fn remove_work_tree(&self, path: PathBuf) {
         Command::new("git").args(["worktree", "remove", path.to_str().unwrap()]).current_dir(&self.worktree).output().unwrap();
+    }
+
+    fn create_branch(&self, name: BranchName, point: impl Point) {
+        Command::new("git").args(["branch", &name.0, point.reference()]).current_dir(&self.worktree).output().unwrap();
     }
 }
 
