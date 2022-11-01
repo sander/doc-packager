@@ -28,7 +28,8 @@ trait ContentTrackingService {
     /// Risk: the path could be anything, not per se a valid worktree.
     fn commit(&self, message: CommitMessage) -> Option<CommitId>;
 
-    // fn commit_tree(&self, name: ObjectName) -> CommitId;
+    fn commit_tree(&self, name: ObjectName) -> CommitId;
+
     // fn make_tree(&self) -> ObjectName;
     // fn publish(&self, name: BranchName);
 }
@@ -160,6 +161,12 @@ impl ContentTrackingService for Git {
         } else {
             panic!("Unexpected status");
         }
+    }
+
+    fn commit_tree(&self, name: ObjectName) -> CommitId {
+        let message = "build: new documentation package";
+        let command = Command::new("git").args(["commit-tree", &name.0, "-m", message]).current_dir(&self.worktree).output().unwrap().stdout;
+        CommitId(str::from_utf8(&command).unwrap().to_string())
     }
 }
 
