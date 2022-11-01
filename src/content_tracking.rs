@@ -1,5 +1,5 @@
 use std::path::PathBuf;
-use std::process::{Command, ExitStatus};
+use std::process::{Command, ExitStatus, Stdio};
 use std::{fs, str};
 use std::os::unix::prelude::ExitStatusExt;
 use std::str::FromStr;
@@ -30,7 +30,8 @@ trait ContentTrackingService {
 
     fn commit_tree(&self, name: ObjectName) -> CommitId;
 
-    // fn make_tree(&self) -> ObjectName;
+    fn make_tree(&self) -> ObjectName;
+
     // fn publish(&self, name: BranchName);
 }
 
@@ -168,6 +169,11 @@ impl ContentTrackingService for Git {
         let command = Command::new("git").args(["commit-tree", &name.0, "-m", message]).current_dir(&self.worktree).output().unwrap().stdout;
         CommitId(str::from_utf8(&command).unwrap().to_string())
     }
+
+    fn make_tree(&self) -> ObjectName {
+        let command = Command::new("git").args(["mktree"]).current_dir(&self.worktree).stdin(Stdio::null()).output().unwrap().stdout;
+        ObjectName(str::from_utf8(&command).unwrap().to_string().replace("\n", ""))
+    }
 }
 
 #[cfg(test)]
@@ -231,6 +237,19 @@ mod tests {
         git.add_file(file_path.clone(), target_path.clone());
 
         assert_eq!(fs::read_to_string(content_path.clone().join(target_path)).unwrap(), content);
+
+        fs::remove_dir_all(main_path.clone()).unwrap();
+    }
+
+    #[test]
+    fn make_tree() {
+        let main_path = PathBuf::from("target/test-tracking-make-tree");
+
+        fs::remove_dir_all(main_path.clone()).ok();
+        fs::create_dir_all(main_path.clone()).unwrap();
+
+        let git = Git::new(main_path.clone());
+        assert_eq!(git.make_tree().0, "4b825dc642cb6eb9a060e54bf8d69288fbee4904");
 
         fs::remove_dir_all(main_path.clone()).unwrap();
     }
