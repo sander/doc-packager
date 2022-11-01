@@ -1,11 +1,11 @@
-use std::path::Path;
+use std::path::PathBuf;
 use std::process::Command;
 use std::str;
 use std::str::FromStr;
 
 use regex::Regex;
 
-trait ContentTrackingService<'a> {
+trait ContentTrackingService {
     fn initialize(&self);
     fn get_current_branch_name(&self) -> BranchName;
 
@@ -93,25 +93,25 @@ fn get_version() -> Option<SemanticVersion> {
 }
 
 #[derive(Debug)]
-struct Git<'a> {
-    worktree: &'a Path,
+struct Git {
+    worktree: PathBuf,
 }
 
-impl Git<'_> {
-    fn new(worktree: &Path) -> Git {
+impl Git {
+    fn new(worktree: PathBuf) -> Git {
         Git { worktree }
     }
 }
 
 static INITIAL_BRANCH_NAME: &str = "main";
 
-impl<'a> ContentTrackingService<'a> for Git<'a> {
+impl ContentTrackingService for Git {
     fn initialize(&self) {
-        Command::new("git").args(["init", &format!("--initial-branch={}", INITIAL_BRANCH_NAME)]).current_dir(self.worktree).output().unwrap();
+        Command::new("git").args(["init", &format!("--initial-branch={}", INITIAL_BRANCH_NAME)]).current_dir(&self.worktree).output().unwrap();
     }
 
     fn get_current_branch_name(&self) -> BranchName {
-        let out = Command::new("git").args(["branch", "--show-current"]).current_dir(self.worktree).output().unwrap().stdout;
+        let out = Command::new("git").args(["branch", "--show-current"]).current_dir(&self.worktree).output().unwrap().stdout;
         BranchName(str::from_utf8(&out).unwrap().to_string().replace("\n", ""))
     }
 }
@@ -148,12 +148,13 @@ mod tests {
 
     #[test]
     fn get_branch_name() {
-        let path = Path::new("target/test-tracking");
-        let _ = fs::remove_dir_all(path);
-        let _ = fs::create_dir_all(path);
-        let git = Git::new(path);
+        let path = PathBuf::from("target/test-tracking");
+        // let path = Path::new("target/test-tracking");
+        let _ = fs::remove_dir_all(path.clone());
+        let _ = fs::create_dir_all(path.clone());
+        let git = Git::new(path.clone());
         git.initialize();
         assert_eq!(git.get_current_branch_name().0, INITIAL_BRANCH_NAME);
-        let _ = fs::remove_dir_all(path);
+        let _ = fs::remove_dir_all(path.clone());
     }
 }
