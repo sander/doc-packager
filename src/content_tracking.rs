@@ -14,7 +14,8 @@ trait ContentTrackingService {
 
     fn add_file(&self, source: PathBuf, target: PathBuf);
 
-    // fn add_current_worktree(&self);
+    fn add_current_worktree(&self);
+
     // fn add_worktree(&self, path: &Path, name: BranchName);
     // fn remove_work_tree(&self, path: &Path);
     // fn create_branch<P: Point>(&self, name: BranchName, point: P);
@@ -125,6 +126,10 @@ impl ContentTrackingService for Git {
         fs::create_dir_all(target.parent().unwrap()).unwrap();
         fs::copy(source, target.clone()).unwrap();
         Command::new("git").args(["add", target.to_str().unwrap()]).current_dir(&self.worktree).output().unwrap();
+    }
+
+    fn add_current_worktree(&self) {
+        Command::new("git").args(["add", "."]).current_dir(&self.worktree).output().unwrap();
     }
 }
 
