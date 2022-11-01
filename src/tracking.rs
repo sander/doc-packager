@@ -62,7 +62,7 @@ struct ObjectName(String);
 struct CommitMessage(String);
 
 #[derive(Debug)]
-struct SemanticVersion {
+pub struct SemanticVersion {
     name: String,
     major: u16,
     minor: u16,
@@ -96,7 +96,7 @@ impl SemanticVersion {
     }
 }
 
-fn get_version() -> Option<SemanticVersion> {
+pub fn get_version() -> Option<SemanticVersion> {
     let output = Command::new("git").args(["version"]).output().ok()?;
     str::from_utf8(&output.stdout).ok()?.parse().ok()
 }

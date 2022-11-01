@@ -4,7 +4,7 @@ use std::fs;
 use std::path::PathBuf;
 
 use clap::{arg, Command};
-use docpkg::content_tracking;
+use docpkg::tracking;
 use serde_derive::Deserialize;
 use toml::Value;
 
@@ -35,7 +35,7 @@ fn main() {
     let value: Config = toml::from_str(&contents).unwrap();
     println!("Value: {:?}", value);
 
-    println!("Version {:?}", content_tracking::get_version().unwrap());
+    println!("Version {:?}", tracking::get_version().unwrap());
     let matches = cli().get_matches();
     match matches.subcommand() {
         Some(("publish", sub_matches)) => {
