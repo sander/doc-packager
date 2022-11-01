@@ -147,9 +147,8 @@ mod tests {
     }
 
     #[test]
-    fn get_branch_name() {
+    fn get_current_branch_name() {
         let path = PathBuf::from("target/test-tracking");
-        // let path = Path::new("target/test-tracking");
         let _ = fs::remove_dir_all(path.clone());
         let _ = fs::create_dir_all(path.clone());
         let git = Git::new(path.clone());
