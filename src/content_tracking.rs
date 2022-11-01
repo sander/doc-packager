@@ -6,7 +6,9 @@ use std::str::FromStr;
 use regex::Regex;
 
 trait ContentTrackingService {
+
     fn initialize(&self);
+
     fn get_current_branch_name(&self) -> BranchName;
 
     /// Risk: origin could be anything, not per se a valid worktree.
@@ -18,7 +20,8 @@ trait ContentTrackingService {
 
     fn add_worktree(&self, path: PathBuf, name: BranchName);
 
-    // fn remove_work_tree(&self, path: &Path);
+    fn remove_work_tree(&self, path: PathBuf);
+
     // fn create_branch<P: Point>(&self, name: BranchName, point: P);
 
     // Risk: the path could be anything, not per se a valid worktree.
@@ -135,6 +138,10 @@ impl ContentTrackingService for Git {
 
     fn add_worktree(&self, path: PathBuf, name: BranchName) {
         Command::new("git").args(["worktree", "add", "--force", path.to_str().unwrap(), &name.0]).current_dir(&self.worktree).output().unwrap();
+    }
+
+    fn remove_work_tree(&self, path: PathBuf) {
+        Command::new("git").args(["worktree", "remove", path.to_str().unwrap()]).current_dir(&self.worktree).output().unwrap();
     }
 }
 
