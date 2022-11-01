@@ -9,10 +9,11 @@ trait ContentTrackingService {
     fn initialize(&self);
     fn get_current_branch_name(&self) -> BranchName;
 
-    // Risk: origin could be anything, not per se a valid worktree.
-    // fn clone(&self, origin: &Path);
+    /// Risk: origin could be anything, not per se a valid worktree.
+    fn clone(&self, origin: PathBuf);
 
-    // fn add_file(&self, source: &Path, target: &Path);
+    fn add_file(&self, source: PathBuf, target: PathBuf);
+
     // fn add_current_worktree(&self);
     // fn add_worktree(&self, path: &Path, name: BranchName);
     // fn remove_work_tree(&self, path: &Path);
@@ -113,6 +114,14 @@ impl ContentTrackingService for Git {
     fn get_current_branch_name(&self) -> BranchName {
         let out = Command::new("git").args(["branch", "--show-current"]).current_dir(&self.worktree).output().unwrap().stdout;
         BranchName(str::from_utf8(&out).unwrap().to_string().replace("\n", ""))
+    }
+
+    fn clone(&self, origin: PathBuf) {
+        Command::new("git").args(["clone", origin.to_str().unwrap()]).current_dir(&self.worktree).output().unwrap();
+    }
+
+    fn add_file(&self, source: PathBuf, target: PathBuf) {
+        todo!()
     }
 }
 
