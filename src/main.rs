@@ -2,20 +2,14 @@
 
 use std::fs;
 use std::path::PathBuf;
+use std::str::FromStr;
 
 use clap::{arg, Command};
+
+use docpkg::packaging::Manifest;
 use docpkg::tracking;
-use serde_derive::Deserialize;
-use toml::Value;
 
 // extern crate lib;
-
-#[derive(Deserialize, Debug)]
-struct Config {
-    id: String,
-    name: String,
-    files: Vec<PathBuf>,
-}
 
 // #[risk("Some risk annotation")]
 fn cli() -> Command {
@@ -32,7 +26,7 @@ fn cli() -> Command {
 
 fn main() {
     let contents = fs::read_to_string("Docpkg.toml").unwrap();
-    let value: Config = toml::from_str(&contents).unwrap();
+    let value: Manifest = Manifest::from_str(&contents).unwrap();
     println!("Value: {:?}", value);
 
     println!("Version {:?}", tracking::get_version().unwrap());

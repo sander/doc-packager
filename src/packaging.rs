@@ -27,7 +27,8 @@ struct ManifestDto {
     files: Vec<PathBuf>,
 }
 
-struct Manifest {
+#[derive(Debug)]
+pub struct Manifest {
     id: PackageId,
     name: PackageName,
     files: HashSet<FileDescription>,
