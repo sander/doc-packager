@@ -1,4 +1,5 @@
 use std::collections::HashSet;
+use std::fs;
 use std::path::PathBuf;
 use std::str::FromStr;
 use regex::Regex;
@@ -72,12 +73,16 @@ impl DocumentationPackagingService {
         self.content.create_branch(&name, id);
     }
 
-    fn create_initial_commit() -> CommitId {
-        todo!()
+    fn create_initial_commit(&self) -> CommitId {
+        let tree_id = self.content.make_tree();
+        self.content.commit_tree(tree_id)
     }
 
-    fn create_worktree() {
-        todo!()
+    fn create_worktree(&self) {
+        fs::remove_dir_all(self.content.worktree()).unwrap();
+        let commit_id = self.create_initial_commit();
+        self.ensure_branch_exists_with_default_commit(&self.target_branch_name, commit_id);
+        self.content.add_worktree(PathBuf::from(RELATIVE_TARGET_PATH), &self.target_branch_name);
     }
 
     fn publish() {
