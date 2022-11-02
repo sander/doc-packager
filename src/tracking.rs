@@ -1,7 +1,7 @@
-use std::path::PathBuf;
-use std::process::{Command, ExitStatus, Stdio};
 use std::{fs, str};
 use std::os::unix::prelude::ExitStatusExt;
+use std::path::PathBuf;
+use std::process::{Command, ExitStatus, Stdio};
 use std::str::FromStr;
 
 use regex::Regex;
@@ -73,18 +73,17 @@ pub fn get_version() -> Option<SemanticVersion> {
 }
 
 #[derive(Debug)]
-struct Git {
+struct ContentTrackingService {
     worktree: PathBuf,
 }
 
-impl Git {
-}
+impl ContentTrackingService {}
 
 static INITIAL_BRANCH_NAME: &str = "main";
 
-impl Git {
+impl ContentTrackingService {
     fn new(worktree: PathBuf) -> Self {
-        Git { worktree }
+        Self { worktree }
     }
 
     fn initialize(&self) {
@@ -191,7 +190,7 @@ mod tests {
         fs::remove_dir_all(path.clone()).ok();
         fs::create_dir_all(path.clone()).unwrap();
 
-        let git = Git::new(path.clone());
+        let git = ContentTrackingService::new(path.clone());
         git.initialize();
         assert_eq!(git.get_current_branch_name().0, INITIAL_BRANCH_NAME);
 
@@ -210,7 +209,7 @@ mod tests {
         fs::create_dir_all(content_path.clone()).unwrap();
         fs::write(file_path.clone(), content).unwrap();
 
-        let git = Git::new(content_path.clone());
+        let git = ContentTrackingService::new(content_path.clone());
         git.initialize();
         git.add_file(file_path.clone(), target_path.clone());
 
@@ -226,7 +225,7 @@ mod tests {
         fs::remove_dir_all(main_path.clone()).ok();
         fs::create_dir_all(main_path.clone()).unwrap();
 
-        let git = Git::new(main_path.clone());
+        let git = ContentTrackingService::new(main_path.clone());
         assert_eq!(git.make_tree().0, "4b825dc642cb6eb9a060e54bf8d69288fbee4904");
 
         fs::remove_dir_all(main_path.clone()).unwrap();
