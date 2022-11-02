@@ -3,6 +3,7 @@ use std::path::PathBuf;
 use std::str::FromStr;
 use regex::Regex;
 use serde_derive::Deserialize;
+use crate::tracking::{BranchName, CommitId, ContentTrackingService};
 
 #[derive(PartialOrd, PartialEq, Debug, Eq, Hash)]
 struct FileDescription(PathBuf);
@@ -48,9 +49,47 @@ impl FromStr for Manifest {
     }
 }
 
-// trait DocumentationPackagingService {
-//     fn publish(files: impl IntoIterator);
-// }
+struct DocumentationPackagingService {
+    content: ContentTrackingService,
+    target_branch_name: BranchName,
+    manifest: Manifest,
+}
+
+static RELATIVE_TARGET_PATH: &str = "target/docpkg";
+
+impl DocumentationPackagingService {
+    /// # Risks
+    /// - User data lost when creating a work tree when one already exists.
+    fn open(content: ContentTrackingService, manifest: Manifest) -> Self {
+        todo!()
+    }
+
+    /// # Risks
+    /// - User has the origin configured not as `origin`.
+    fn ensure_branch_exists_with_default_commit(&self, name: &BranchName, id: CommitId) {
+        let point = BranchName::from_str(&format!("origin/{}", name.to_string())).unwrap();
+        self.content.create_branch(&name, point);
+        self.content.create_branch(&name, id);
+    }
+
+    fn create_initial_commit() -> CommitId {
+        todo!()
+    }
+
+    fn create_worktree() {
+        todo!()
+    }
+
+    fn publish() {
+        todo!()
+    }
+}
+
+impl Drop for DocumentationPackagingService {
+    fn drop(&mut self) {
+        self.content.remove_work_tree(PathBuf::from(RELATIVE_TARGET_PATH));
+    }
+}
 
 #[cfg(test)]
 mod tests {

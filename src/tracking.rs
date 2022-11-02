@@ -6,12 +6,12 @@ use std::str::FromStr;
 
 use regex::Regex;
 
-trait Point {
+pub trait Point {
     fn reference(&self) -> &str;
 }
 
 #[derive(Debug, PartialEq)]
-struct BranchName(String);
+pub struct BranchName(String);
 
 impl Point for BranchName {
     fn reference(self: &Self) -> &str {
@@ -19,8 +19,22 @@ impl Point for BranchName {
     }
 }
 
+impl ToString for BranchName {
+    fn to_string(&self) -> String {
+        self.0.clone()
+    }
+}
+
+impl FromStr for BranchName {
+    type Err = ();
+
+    fn from_str(s: &str) -> Result<Self, Self::Err> {
+        Ok(BranchName(s.to_string()))
+    }
+}
+
 #[derive(Debug)]
-struct CommitId(String);
+pub struct CommitId(String);
 
 impl Point for CommitId {
     fn reference(self: &Self) -> &str {
@@ -73,7 +87,7 @@ pub fn get_version() -> Option<SemanticVersion> {
 }
 
 #[derive(Debug)]
-struct ContentTrackingService {
+pub struct ContentTrackingService {
     worktree: PathBuf,
 }
 
@@ -121,11 +135,11 @@ impl ContentTrackingService {
         self.command().args(["worktree", "add", "--force", path.to_str().unwrap(), &name.0]).output().unwrap();
     }
 
-    fn remove_work_tree(&self, path: PathBuf) {
+    pub fn remove_work_tree(&self, path: PathBuf) {
         self.command().args(["worktree", "remove", path.to_str().unwrap()]).output().unwrap();
     }
 
-    fn create_branch(&self, name: BranchName, point: impl Point) {
+    pub fn create_branch(&self, name: &BranchName, point: impl Point) {
         self.command().args(["branch", &name.0, point.reference()]).output().unwrap();
     }
 
