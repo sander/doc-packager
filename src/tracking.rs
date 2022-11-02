@@ -6,35 +6,6 @@ use std::str::FromStr;
 
 use regex::Regex;
 
-trait ContentTrackingService {
-
-    fn initialize(&self);
-
-    fn get_current_branch_name(&self) -> BranchName;
-
-    /// Risk: origin could be anything, not per se a valid worktree.
-    fn clone(&self, origin: PathBuf);
-
-    fn add_file(&self, source: PathBuf, target: PathBuf);
-
-    fn add_current_worktree(&self);
-
-    fn add_worktree(&self, path: PathBuf, name: BranchName);
-
-    fn remove_work_tree(&self, path: PathBuf);
-
-    fn create_branch(&self, name: BranchName, point: impl Point);
-
-    /// Risk: the path could be anything, not per se a valid worktree.
-    fn commit(&self, message: CommitMessage) -> Option<CommitId>;
-
-    fn commit_tree(&self, name: ObjectName) -> CommitId;
-
-    fn make_tree(&self) -> ObjectName;
-
-    fn push_to_origin(&self, name: BranchName);
-}
-
 trait Point {
     fn reference(&self) -> &str;
 }
@@ -107,14 +78,15 @@ struct Git {
 }
 
 impl Git {
-    fn new(worktree: PathBuf) -> impl ContentTrackingService {
-        Git { worktree }
-    }
 }
 
 static INITIAL_BRANCH_NAME: &str = "main";
 
-impl ContentTrackingService for Git {
+impl Git {
+    fn new(worktree: PathBuf) -> Self {
+        Git { worktree }
+    }
+
     fn initialize(&self) {
         Command::new("git").args(["init", &format!("--initial-branch={}", INITIAL_BRANCH_NAME)]).current_dir(&self.worktree).output().unwrap();
     }
@@ -124,6 +96,7 @@ impl ContentTrackingService for Git {
         BranchName(str::from_utf8(&out).unwrap().to_string().replace("\n", ""))
     }
 
+    /// Risk: origin could be anything, not per se a valid worktree.
     fn clone(&self, origin: PathBuf) {
         Command::new("git").args(["clone", origin.to_str().unwrap()]).current_dir(&self.worktree).output().unwrap();
     }
@@ -151,6 +124,7 @@ impl ContentTrackingService for Git {
         Command::new("git").args(["branch", &name.0, point.reference()]).current_dir(&self.worktree).output().unwrap();
     }
 
+    /// Risk: the path could be anything, not per se a valid worktree.
     fn commit(&self, message: CommitMessage) -> Option<CommitId> {
         let result = Command::new("git").args(["commit", "-m", &message.0]).current_dir(&self.worktree).output().unwrap();
         if result.status.success() {
