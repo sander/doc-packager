@@ -1,6 +1,6 @@
 use std::{fs, str};
 use std::os::unix::prelude::ExitStatusExt;
-use std::path::PathBuf;
+use std::path::{Path, PathBuf};
 use std::process::{Command, ExitStatus, Stdio};
 use std::str::FromStr;
 
@@ -42,9 +42,17 @@ impl Point for CommitId {
     }
 }
 
-struct ObjectName(String);
+pub struct ObjectName(String);
 
-struct CommitMessage(String);
+pub struct CommitMessage(String);
+
+impl FromStr for CommitMessage {
+    type Err = ();
+
+    fn from_str(s: &str) -> Result<Self, Self::Err> {
+        Ok(CommitMessage(s.to_string()))
+    }
+}
 
 #[derive(Debug)]
 pub struct SemanticVersion {
@@ -106,6 +114,10 @@ impl ContentTrackingService {
         Self { worktree }
     }
 
+    pub fn worktree(&self) -> &Path {
+        &self.worktree
+    }
+
     fn initialize(&self) {
         self.command().args(["init", &format!("--initial-branch={}", INITIAL_BRANCH_NAME)]).output().unwrap();
     }
@@ -120,7 +132,7 @@ impl ContentTrackingService {
         self.command().args(["clone", origin.to_str().unwrap()]).output().unwrap();
     }
 
-    fn add_file(&self, source: PathBuf, target: PathBuf) {
+    pub fn add_file(&self, source: PathBuf, target: PathBuf) {
         let target = self.worktree.join(target);
         fs::create_dir_all(target.parent().unwrap()).unwrap();
         fs::copy(source, target.clone()).unwrap();
@@ -131,7 +143,7 @@ impl ContentTrackingService {
         self.command().args(["add", "."]).output().unwrap();
     }
 
-    fn add_worktree(&self, path: PathBuf, name: BranchName) {
+    pub fn add_worktree(&self, path: PathBuf, name: &BranchName) {
         self.command().args(["worktree", "add", "--force", path.to_str().unwrap(), &name.0]).output().unwrap();
     }
 
@@ -144,7 +156,7 @@ impl ContentTrackingService {
     }
 
     /// Risk: the path could be anything, not per se a valid worktree.
-    fn commit(&self, message: CommitMessage) -> Option<CommitId> {
+    pub fn commit(&self, message: CommitMessage) -> Option<CommitId> {
         let result = self.command().args(["commit", "-m", &message.0]).output().unwrap();
         if result.status.success() {
             let out = self.command().args(["rev-parse", "HEAD"]).output().unwrap().stdout;
@@ -157,18 +169,18 @@ impl ContentTrackingService {
         }
     }
 
-    fn commit_tree(&self, name: ObjectName) -> CommitId {
+    pub fn commit_tree(&self, name: ObjectName) -> CommitId {
         let message = "build: new documentation package";
         let command = self.command().args(["commit-tree", &name.0, "-m", message]).output().unwrap().stdout;
         CommitId(str::from_utf8(&command).unwrap().to_string())
     }
 
-    fn make_tree(&self) -> ObjectName {
+    pub fn make_tree(&self) -> ObjectName {
         let command = self.command().args(["mktree"]).stdin(Stdio::null()).output().unwrap().stdout;
         ObjectName(str::from_utf8(&command).unwrap().to_string().replace("\n", ""))
     }
 
-    fn push_to_origin(&self, name: BranchName) {
+    pub fn push_to_origin(&self, name: &BranchName) {
         self.command().args(["push", "origin", &name.0]).output().unwrap();
     }
 }

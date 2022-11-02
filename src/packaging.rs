@@ -2,9 +2,11 @@ use std::collections::HashSet;
 use std::fs;
 use std::path::PathBuf;
 use std::str::FromStr;
+
 use regex::Regex;
 use serde_derive::Deserialize;
-use crate::tracking::{BranchName, CommitId, ContentTrackingService};
+
+use crate::tracking::{BranchName, CommitId, CommitMessage, ContentTrackingService};
 
 #[derive(PartialOrd, PartialEq, Debug, Eq, Hash)]
 struct FileDescription(PathBuf);
@@ -45,13 +47,14 @@ impl FromStr for Manifest {
         Ok(Manifest {
             id,
             name: PackageName(dto.name),
-            files: dto.files.into_iter().map(|f| FileDescription(f)).collect()
+            files: dto.files.into_iter().map(|f| FileDescription(f)).collect(),
         })
     }
 }
 
 struct DocumentationPackagingService {
     content: ContentTrackingService,
+    target_content: ContentTrackingService,
     target_branch_name: BranchName,
     manifest: Manifest,
 }
@@ -61,7 +64,7 @@ static RELATIVE_TARGET_PATH: &str = "target/docpkg";
 impl DocumentationPackagingService {
     /// # Risks
     /// - User data lost when creating a work tree when one already exists.
-    fn open(content: ContentTrackingService, manifest: Manifest) -> Self {
+    fn open(manifest: Manifest) -> Self {
         todo!()
     }
 
@@ -85,8 +88,10 @@ impl DocumentationPackagingService {
         self.content.add_worktree(PathBuf::from(RELATIVE_TARGET_PATH), &self.target_branch_name);
     }
 
-    fn publish() {
-        todo!()
+    fn publish(&self) {
+        self.manifest.files.iter().for_each(|f| self.target_content.add_file(self.content.worktree().join(f.0.clone()), f.0.clone()));
+        self.target_content.commit(CommitMessage::from_str("docs: new package").unwrap());
+        self.content.push_to_origin(&self.target_branch_name);
     }
 }
 
@@ -101,6 +106,7 @@ mod tests {
     use std::collections::HashSet;
     use std::path::PathBuf;
     use std::str::FromStr;
+
     use crate::packaging::{FileDescription, Manifest};
 
     #[test]
