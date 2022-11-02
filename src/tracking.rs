@@ -82,52 +82,58 @@ impl ContentTrackingService {}
 static INITIAL_BRANCH_NAME: &str = "main";
 
 impl ContentTrackingService {
+    fn command(&self) -> Command {
+        let mut command = Command::new("git");
+        command.current_dir(&self.worktree);
+        command
+    }
+
     fn new(worktree: PathBuf) -> Self {
         Self { worktree }
     }
 
     fn initialize(&self) {
-        Command::new("git").args(["init", &format!("--initial-branch={}", INITIAL_BRANCH_NAME)]).current_dir(&self.worktree).output().unwrap();
+        self.command().args(["init", &format!("--initial-branch={}", INITIAL_BRANCH_NAME)]).output().unwrap();
     }
 
     fn get_current_branch_name(&self) -> BranchName {
-        let out = Command::new("git").args(["branch", "--show-current"]).current_dir(&self.worktree).output().unwrap().stdout;
+        let out = self.command().args(["branch", "--show-current"]).output().unwrap().stdout;
         BranchName(str::from_utf8(&out).unwrap().to_string().replace("\n", ""))
     }
 
     /// Risk: origin could be anything, not per se a valid worktree.
     fn clone(&self, origin: PathBuf) {
-        Command::new("git").args(["clone", origin.to_str().unwrap()]).current_dir(&self.worktree).output().unwrap();
+        self.command().args(["clone", origin.to_str().unwrap()]).output().unwrap();
     }
 
     fn add_file(&self, source: PathBuf, target: PathBuf) {
         let target = self.worktree.join(target);
         fs::create_dir_all(target.parent().unwrap()).unwrap();
         fs::copy(source, target.clone()).unwrap();
-        Command::new("git").args(["add", target.to_str().unwrap()]).current_dir(&self.worktree).output().unwrap();
+        self.command().args(["add", target.to_str().unwrap()]).output().unwrap();
     }
 
     fn add_current_worktree(&self) {
-        Command::new("git").args(["add", "."]).current_dir(&self.worktree).output().unwrap();
+        self.command().args(["add", "."]).output().unwrap();
     }
 
     fn add_worktree(&self, path: PathBuf, name: BranchName) {
-        Command::new("git").args(["worktree", "add", "--force", path.to_str().unwrap(), &name.0]).current_dir(&self.worktree).output().unwrap();
+        self.command().args(["worktree", "add", "--force", path.to_str().unwrap(), &name.0]).output().unwrap();
     }
 
     fn remove_work_tree(&self, path: PathBuf) {
-        Command::new("git").args(["worktree", "remove", path.to_str().unwrap()]).current_dir(&self.worktree).output().unwrap();
+        self.command().args(["worktree", "remove", path.to_str().unwrap()]).output().unwrap();
     }
 
     fn create_branch(&self, name: BranchName, point: impl Point) {
-        Command::new("git").args(["branch", &name.0, point.reference()]).current_dir(&self.worktree).output().unwrap();
+        self.command().args(["branch", &name.0, point.reference()]).output().unwrap();
     }
 
     /// Risk: the path could be anything, not per se a valid worktree.
     fn commit(&self, message: CommitMessage) -> Option<CommitId> {
-        let result = Command::new("git").args(["commit", "-m", &message.0]).current_dir(&self.worktree).output().unwrap();
+        let result = self.command().args(["commit", "-m", &message.0]).output().unwrap();
         if result.status.success() {
-            let out = Command::new("git").args(["rev-parse", "HEAD"]).current_dir(&self.worktree).output().unwrap().stdout;
+            let out = self.command().args(["rev-parse", "HEAD"]).output().unwrap().stdout;
             let id = CommitId(str::from_utf8(&out).unwrap().to_string().replace("\n", ""));
             Some(id)
         } else if result.status == ExitStatus::from_raw(1) {
@@ -139,17 +145,17 @@ impl ContentTrackingService {
 
     fn commit_tree(&self, name: ObjectName) -> CommitId {
         let message = "build: new documentation package";
-        let command = Command::new("git").args(["commit-tree", &name.0, "-m", message]).current_dir(&self.worktree).output().unwrap().stdout;
+        let command = self.command().args(["commit-tree", &name.0, "-m", message]).output().unwrap().stdout;
         CommitId(str::from_utf8(&command).unwrap().to_string())
     }
 
     fn make_tree(&self) -> ObjectName {
-        let command = Command::new("git").args(["mktree"]).current_dir(&self.worktree).stdin(Stdio::null()).output().unwrap().stdout;
+        let command = self.command().args(["mktree"]).stdin(Stdio::null()).output().unwrap().stdout;
         ObjectName(str::from_utf8(&command).unwrap().to_string().replace("\n", ""))
     }
 
     fn push_to_origin(&self, name: BranchName) {
-        Command::new("git").args(["push", "origin", &name.0]).current_dir(&self.worktree).output().unwrap();
+        self.command().args(["push", "origin", &name.0]).output().unwrap();
     }
 }
 
