@@ -170,10 +170,10 @@ impl ContentTrackingService {
             let out = self.command().args(["rev-parse", "HEAD"]).output().unwrap().stdout;
             let id = CommitId(str::from_utf8(&out).unwrap().to_string().replace("\n", ""));
             Some(id)
-        } else if result.status == ExitStatus::from_raw(1) {
+        } else if result.status.code().filter(|c| c == &1).is_some() {
             None
         } else {
-            panic!("Unexpected status");
+            panic!("Unexpected status {:?}", result.status.code());
         }
     }
 
