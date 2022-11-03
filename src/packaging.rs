@@ -1,5 +1,5 @@
 use std::collections::HashSet;
-use std::fs;
+use std::{env, fs};
 use std::path::PathBuf;
 use std::str::FromStr;
 
@@ -64,8 +64,16 @@ static RELATIVE_TARGET_PATH: &str = "target/docpkg";
 impl DocumentationPackagingService {
     /// # Risks
     /// - User data lost when creating a work tree when one already exists.
-    fn open(manifest: Manifest) -> Self {
-        todo!()
+    fn open(path: PathBuf) -> Self {
+        let contents = fs::read_to_string(path.join("Docpkg.toml")).unwrap();
+        let manifest: Manifest = Manifest::from_str(&contents).unwrap();
+        let content = ContentTrackingService::new(path.clone());
+        let target_content = ContentTrackingService::new(path.join(RELATIVE_TARGET_PATH));
+        let original_branch_name = content.get_current_branch_name().or(env::var("BRANCH_NAME").ok().and_then(|s| BranchName::from_str(&s).ok())).unwrap();
+        let target_branch_name = BranchName::from_str(&format!("docpkg/{}/{}", manifest.name.0, original_branch_name.to_string())).unwrap();
+        let service = Self { content, target_content, target_branch_name, manifest };
+        service.create_worktree();
+        service
     }
 
     /// # Risks

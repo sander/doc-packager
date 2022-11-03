@@ -110,7 +110,7 @@ impl ContentTrackingService {
         command
     }
 
-    fn new(worktree: PathBuf) -> Self {
+    pub fn new(worktree: PathBuf) -> Self {
         Self { worktree }
     }
 
@@ -122,9 +122,14 @@ impl ContentTrackingService {
         self.command().args(["init", &format!("--initial-branch={}", INITIAL_BRANCH_NAME)]).output().unwrap();
     }
 
-    fn get_current_branch_name(&self) -> BranchName {
+    pub fn get_current_branch_name(&self) -> Option<BranchName> {
         let out = self.command().args(["branch", "--show-current"]).output().unwrap().stdout;
-        BranchName(str::from_utf8(&out).unwrap().to_string().replace("\n", ""))
+        let str = str::from_utf8(&out).unwrap().to_string().replace("\n", "");
+        if str == "" {
+            None
+        } else {
+            Some(BranchName(str))
+        }
     }
 
     /// Risk: origin could be anything, not per se a valid worktree.
@@ -224,7 +229,7 @@ mod tests {
 
         let git = ContentTrackingService::new(path.clone());
         git.initialize();
-        assert_eq!(git.get_current_branch_name().0, INITIAL_BRANCH_NAME);
+        assert_eq!(git.get_current_branch_name().unwrap().0, INITIAL_BRANCH_NAME);
 
         fs::remove_dir_all(path.clone()).unwrap();
     }
