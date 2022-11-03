@@ -72,7 +72,7 @@ impl DocumentationPackagingService {
         let target_content = ContentTrackingService::new(path.join(RELATIVE_TARGET_PATH));
         println!("Target content path: {:?}", path.join(RELATIVE_TARGET_PATH));
         let original_branch_name = content.get_current_branch_name().or(env::var("BRANCH_NAME").ok().and_then(|s| BranchName::from_str(&s).ok())).unwrap();
-        let target_branch_name = BranchName::from_str(&format!("docpkg/{}/{}", manifest.name.0, original_branch_name.to_string())).unwrap();
+        let target_branch_name = BranchName::from_str(&format!("docpkg/{}/{}", manifest.id.0, original_branch_name.to_string())).unwrap();
         let service = Self { content, target_content, target_branch_name, manifest };
         service.create_worktree();
         service

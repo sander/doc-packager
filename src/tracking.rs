@@ -150,7 +150,8 @@ impl ContentTrackingService {
     }
 
     pub fn add_worktree(&self, path: PathBuf, name: &BranchName) {
-        self.command().args(["worktree", "add", "--force", path.to_str().unwrap(), &name.0]).output().unwrap();
+        let result = self.command().args(["worktree", "add", "--force", path.to_str().unwrap(), &name.0]).output().unwrap();
+        println!("Add worktree result: {:?}", result);
     }
 
     pub fn remove_work_tree(&self, path: PathBuf) {
@@ -158,7 +159,8 @@ impl ContentTrackingService {
     }
 
     pub fn create_branch(&self, name: &BranchName, point: impl Point) {
-        self.command().args(["branch", &name.0, point.reference()]).output().unwrap();
+        let result = self.command().args(["branch", &name.0, point.reference()]).output().unwrap();
+        println!("Create branch result: {:?}", result);
     }
 
     /// Risk: the path could be anything, not per se a valid worktree.
@@ -178,7 +180,7 @@ impl ContentTrackingService {
     pub fn commit_tree(&self, name: ObjectName) -> CommitId {
         let message = "build: new documentation package";
         let command = self.command().args(["commit-tree", &name.0, "-m", message]).output().unwrap().stdout;
-        CommitId(str::from_utf8(&command).unwrap().to_string())
+        CommitId(str::from_utf8(&command).unwrap().to_string().replace("\n", ""))
     }
 
     pub fn make_tree(&self) -> ObjectName {
