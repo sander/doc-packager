@@ -118,13 +118,14 @@ mod tests {
     use std::ops::Add;
     use std::path::PathBuf;
     use std::str::FromStr;
+    use std::sync::Mutex;
     use fs_extra::dir;
     use fs_extra::dir::CopyOptions;
 
     use crate::packaging::{DocumentationPackagingService, FileDescription, Manifest};
     use crate::tracking::{CommitMessage, ContentTrackingService};
 
-    const TEST_PATH: &str = "target/test-packaging-integration";
+    const TEST_ROOT_PATH: &str = "target/test-packaging-integration";
 
     // const TEST_PATH: String = format!("{}/resources/test", env!("CARGO_MANIFEST_DIR"));
     // const ORIGIN_PATH: String = TEST_PATH.add("/origin");
@@ -144,9 +145,8 @@ mod tests {
         assert_eq!(manifest.files, HashSet::from([FileDescription(PathBuf::from("README.md"))]));
     }
 
-    fn set_up() {
+    fn set_up(test_path: PathBuf) {
         let source_path = PathBuf::from(env!("CARGO_MANIFEST_DIR")).join("resources/test/example");
-        let test_path = PathBuf::from(TEST_PATH);
         let origin_path = test_path.join("origin");
         let clone_path = test_path.join("clone");
         let copy_options = CopyOptions::new();
@@ -162,14 +162,24 @@ mod tests {
         content.clone_to(clone_path);
     }
 
-    fn tear_down() {
-        fs::remove_dir_all(TEST_PATH).unwrap();
+    fn tear_down(test_path: PathBuf) {
+        fs::remove_dir_all(test_path).unwrap();
     }
 
     #[test]
     fn test_initialization() {
-        set_up();
-        DocumentationPackagingService::open(PathBuf::from(TEST_PATH).join("clone"));
-        // tear_down();
+        let test_path = PathBuf::from(format!("{}-initialization", TEST_ROOT_PATH));
+        set_up(test_path.clone());
+        DocumentationPackagingService::open(test_path.join("clone"));
+        tear_down(test_path.clone());
+    }
+
+    #[test]
+    fn test_publishing() {
+        let test_path = PathBuf::from(format!("{}-publishing", TEST_ROOT_PATH));
+        set_up(test_path.clone());
+        let service = DocumentationPackagingService::open(test_path.join("clone"));
+        service.publish();
+        tear_down(test_path.clone());
     }
 }
