@@ -1,0 +1,6 @@
+id = "ex-p001"
+name = "Documentation Packager Example Project"
+files = [
+    "document.md",
+    "document-2.md"
+]

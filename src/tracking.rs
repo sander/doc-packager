@@ -118,7 +118,7 @@ impl ContentTrackingService {
         &self.worktree
     }
 
-    fn initialize(&self) {
+    pub fn initialize(&self) {
         self.command().args(["init", &format!("--initial-branch={}", INITIAL_BRANCH_NAME)]).output().unwrap();
     }
 
@@ -133,8 +133,9 @@ impl ContentTrackingService {
     }
 
     /// Risk: origin could be anything, not per se a valid worktree.
-    fn clone(&self, origin: PathBuf) {
-        self.command().args(["clone", origin.to_str().unwrap()]).output().unwrap();
+    pub fn clone_to(&self, target: PathBuf) {
+        let result = Command::new("git").args(["clone", self.worktree.to_str().unwrap(), target.to_str().unwrap()]).output().unwrap();
+        println!("Clone result: {:?}", result);
     }
 
     pub fn add_file(&self, source: PathBuf, target: PathBuf) {
@@ -144,7 +145,7 @@ impl ContentTrackingService {
         self.command().args(["add", target.to_str().unwrap()]).output().unwrap();
     }
 
-    fn add_current_worktree(&self) {
+    pub fn add_current_worktree(&self) {
         self.command().args(["add", "."]).output().unwrap();
     }
 
