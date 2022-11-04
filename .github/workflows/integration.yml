@@ -29,3 +29,5 @@ jobs:
           key: ${{ runner.os }}-cargo-${{ hashFiles('**/Cargo.lock') }}
       - run: cargo build --verbose
       - run: cargo test --verbose
+        env:
+          RUST_BACKTRACE: 1
