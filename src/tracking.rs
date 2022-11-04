@@ -139,10 +139,12 @@ impl ContentTrackingService {
     }
 
     pub fn add_file(&self, source: PathBuf, target: PathBuf) {
-        let target = self.worktree.join(target);
-        fs::create_dir_all(target.parent().unwrap()).unwrap();
-        fs::copy(source, target.clone()).unwrap();
-        self.command().args(["add", target.to_str().unwrap()]).output().unwrap();
+        println!("Adding {:?} as {:?}", source, target);
+        let full_target_path = self.worktree.join(&target);
+        fs::create_dir_all(full_target_path.parent().unwrap()).unwrap();
+        fs::copy(source, full_target_path.clone()).unwrap();
+        let result = self.command().args(["add", target.to_str().unwrap()]).output().unwrap();
+        println!("Add result: {:?}", result);
     }
 
     pub fn add_current_worktree(&self) {
