@@ -148,7 +148,8 @@ impl ContentTrackingService {
     }
 
     pub fn add_current_worktree(&self) {
-        self.command().args(["add", "."]).output().unwrap();
+        let result = self.command().args(["add", "."]).output().unwrap();
+        println!("Add current worktree result: {:?}", result);
     }
 
     pub fn add_worktree(&self, path: PathBuf, name: &BranchName) {
@@ -168,6 +169,7 @@ impl ContentTrackingService {
     /// Risk: the path could be anything, not per se a valid worktree.
     pub fn commit(&self, message: CommitMessage) -> Option<CommitId> {
         let result = self.command().args(["commit", "-m", &message.0]).output().unwrap();
+        println!("Commit result: {:?}", result);
         if result.status.success() {
             let out = self.command().args(["rev-parse", "HEAD"]).output().unwrap().stdout;
             let id = CommitId(str::from_utf8(&out).unwrap().to_string().replace("\n", ""));
