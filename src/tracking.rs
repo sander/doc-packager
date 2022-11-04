@@ -174,6 +174,8 @@ impl ContentTrackingService {
             Some(id)
         } else if result.status.code().filter(|c| c == &1).is_some() {
             None
+        } else if result.status.code().filter(|c| c == &128).is_some() {
+            None
         } else {
             panic!("Unexpected status {:?}", result.status.code());
         }
