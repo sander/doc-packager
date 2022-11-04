@@ -1,0 +1,31 @@
+name: Rust
+on:
+  push:
+    branches: ["main"]
+  pull_request:
+    branches: ["main"]
+env:
+  CARGO_TERM_COLOR: always
+jobs:
+  check-workflow-pinning:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@2541b1294d2704b0964813337f33b291d3f8596b # ratchet:actions/checkout@v3
+      - uses: "docker://ghcr.io/sethvargo/ratchet@sha256:b3e3e8da9f6269e52a48dc45bbe7bc4801d434a0bd987aa394f9bcb99a399d61" # ratchet:docker://ghcr.io/sethvargo/ratchet:0.2.3
+        with:
+          args: "check .github/workflows/integration.yml"
+  build:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@93ea575cb5d8a053eaa0ac8fa3b40d7e05a33cc8 # ratchet:actions/checkout@v3
+      - uses: actions/cache@937d24475381cd9c75ae6db12cb4e79714b926ed # ratchet:actions/cache@v2
+        with:
+          path: |
+            ~/.cargo/bin/
+            ~/.cargo/registry/index/
+            ~/.cargo/registry/cache/
+            ~/.cargo/git/db/
+            target/
+          key: ${{ runner.os }}-cargo-${{ hashFiles('**/Cargo.lock') }}
+      - run: cargo build --verbose
+      - run: cargo test --verbose
