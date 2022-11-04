@@ -1,7 +1,6 @@
 use std::{fs, str};
-use std::os::unix::prelude::ExitStatusExt;
 use std::path::{Path, PathBuf};
-use std::process::{Command, ExitStatus, Stdio};
+use std::process::{Command, Stdio};
 use std::str::FromStr;
 
 use regex::Regex;
@@ -158,7 +157,8 @@ impl ContentTrackingService {
     }
 
     pub fn remove_work_tree(&self, path: PathBuf) {
-        self.command().args(["worktree", "remove", path.to_str().unwrap()]).output().unwrap();
+        println!("removing worktree {:?}", path);
+        self.command().args(["worktree", "remove", path.to_str().unwrap()]).output().ok();
     }
 
     pub fn create_branch(&self, name: &BranchName, point: impl Point) {

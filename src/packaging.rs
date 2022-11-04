@@ -2,7 +2,6 @@ use std::collections::HashSet;
 use std::{env, fs};
 use std::path::PathBuf;
 use std::str::FromStr;
-use std::sync::atomic::Ordering::Relaxed;
 
 use regex::Regex;
 use serde_derive::Deserialize;
@@ -107,7 +106,7 @@ impl DocumentationPackagingService {
 
 impl Drop for DocumentationPackagingService {
     fn drop(&mut self) {
-        // self.content.remove_work_tree(PathBuf::from(RELATIVE_TARGET_PATH));
+        self.content.remove_work_tree(PathBuf::from(RELATIVE_TARGET_PATH));
     }
 }
 
@@ -126,10 +125,6 @@ mod tests {
     use crate::tracking::{CommitMessage, ContentTrackingService};
 
     const TEST_ROOT_PATH: &str = "target/test-packaging-integration";
-
-    // const TEST_PATH: String = format!("{}/resources/test", env!("CARGO_MANIFEST_DIR"));
-    // const ORIGIN_PATH: String = TEST_PATH.add("/origin");
-    // const CLONE_PATH: String = TEST_PATH.add("/clone");
 
     #[test]
     fn parse_manifest() {
