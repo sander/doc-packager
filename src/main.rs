@@ -6,7 +6,7 @@ use std::str::FromStr;
 
 use clap::{arg, Command};
 
-use docpkg::packaging::Manifest;
+use docpkg::packaging::{DocumentationPackagingService, Manifest};
 use docpkg::tracking;
 
 // extern crate lib;
@@ -35,6 +35,8 @@ fn main() {
         Some(("publish", sub_matches)) => {
             let path = sub_matches.get_one::<PathBuf>("dir").expect("required");
             println!("Publishing {:?}", path);
+            let service = DocumentationPackagingService::open(path.clone());
+            service.publish();
         }
         _ => unreachable!(),
     }

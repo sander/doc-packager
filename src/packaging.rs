@@ -52,7 +52,7 @@ impl FromStr for Manifest {
     }
 }
 
-struct DocumentationPackagingService {
+pub struct DocumentationPackagingService {
     content: ContentTrackingService,
     target_content: ContentTrackingService,
     target_branch_name: BranchName,
@@ -64,7 +64,7 @@ static RELATIVE_TARGET_PATH: &str = "target/docpkg";
 impl DocumentationPackagingService {
     /// # Risks
     /// - User data lost when creating a work tree when one already exists.
-    fn open(path: PathBuf) -> Self {
+    pub fn open(path: PathBuf) -> Self {
         let contents = fs::read_to_string(path.join("Docpkg.toml")).unwrap();
         let manifest: Manifest = Manifest::from_str(&contents).unwrap();
         let content = ContentTrackingService::new(path.clone());
@@ -97,7 +97,7 @@ impl DocumentationPackagingService {
         self.content.add_worktree(PathBuf::from(RELATIVE_TARGET_PATH), &self.target_branch_name);
     }
 
-    fn publish(&self) {
+    pub fn publish(&self) {
         self.manifest.files.iter().for_each(|f| self.target_content.add_file(self.content.worktree().join(f.0.clone()), f.0.clone()));
         self.target_content.commit(CommitMessage::from_str("docs: new package").unwrap());
         self.content.push_to_origin(&self.target_branch_name);
