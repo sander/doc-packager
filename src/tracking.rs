@@ -206,7 +206,12 @@ impl ContentTrackingService {
             .args(["branch", &name.0, point.reference()])
             .output()
             .unwrap();
-        println!("Create branch result: {:?}", result);
+        println!(
+            "Create branch result (name: {:?}, point: {:?}): {:?}",
+            name,
+            point.reference(),
+            result
+        );
     }
 
     /// Risk: the path could be anything, not per se a valid worktree.
