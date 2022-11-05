@@ -5,6 +5,8 @@ use std::path::PathBuf;
 use std::str::FromStr;
 
 use clap::{arg, Command};
+use env_logger::Env;
+use log::trace;
 
 use docpkg::packaging::{DocumentationPackagingService, Manifest};
 use docpkg::tracking;
@@ -25,6 +27,12 @@ fn cli() -> Command {
 }
 
 fn main() {
+    env_logger::Builder::from_env(Env::default().default_filter_or("trace"))
+        .format_timestamp(None)
+        .init();
+
+    trace!("Starting main application");
+
     let contents = fs::read_to_string("Docpkg.toml").unwrap();
     let value: Manifest = Manifest::from_str(&contents).unwrap();
     println!("Value: {:?}", value);

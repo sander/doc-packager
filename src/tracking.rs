@@ -1,3 +1,4 @@
+use log::trace;
 use std::path::{Path, PathBuf};
 use std::process::{Command, Stdio};
 use std::str::FromStr;
@@ -97,6 +98,7 @@ impl SemanticVersion {
 
 pub fn get_version() -> Option<SemanticVersion> {
     let output = Command::new("git").args(["version"]).output().ok()?;
+    trace!("Output: {:?}", output);
     str::from_utf8(&output.stdout).ok()?.parse().ok()
 }
 
