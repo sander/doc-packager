@@ -268,10 +268,12 @@ impl ContentTrackingService {
     }
 
     pub fn push_to_origin(&self, name: &BranchName) {
-        self.command()
+        let result = self
+            .command()
             .args(["push", "origin", &name.0])
             .output()
             .unwrap();
+        println!("Push to origin result: {:?}", result);
     }
 }
 
