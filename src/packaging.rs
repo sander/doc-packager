@@ -1,7 +1,7 @@
 use std::collections::HashSet;
-use std::{env, fs};
 use std::path::PathBuf;
 use std::str::FromStr;
+use std::{env, fs};
 
 use regex::Regex;
 use serde_derive::Deserialize;
@@ -70,9 +70,24 @@ impl DocumentationPackagingService {
         let content = ContentTrackingService::new(path.clone());
         let target_content = ContentTrackingService::new(path.join(RELATIVE_TARGET_PATH));
         println!("Target content path: {:?}", path.join(RELATIVE_TARGET_PATH));
-        let original_branch_name = content.get_current_branch_name().or(env::var("BRANCH_NAME").ok().and_then(|s| BranchName::from_str(&s).ok())).unwrap();
-        let target_branch_name = BranchName::from_str(&format!("docpkg/{}/{}", manifest.id.0, original_branch_name.to_string())).unwrap();
-        let service = Self { content, target_content, target_branch_name, manifest };
+        let original_branch_name = content
+            .get_current_branch_name()
+            .or(env::var("BRANCH_NAME")
+                .ok()
+                .and_then(|s| BranchName::from_str(&s).ok()))
+            .unwrap();
+        let target_branch_name = BranchName::from_str(&format!(
+            "docpkg/{}/{}",
+            manifest.id.0,
+            original_branch_name.to_string()
+        ))
+        .unwrap();
+        let service = Self {
+            content,
+            target_content,
+            target_branch_name,
+            manifest,
+        };
         service.create_worktree();
         service
     }
@@ -94,32 +109,40 @@ impl DocumentationPackagingService {
         fs::remove_dir_all(self.content.worktree().join(RELATIVE_TARGET_PATH)).ok();
         let commit_id = self.create_initial_commit();
         self.ensure_branch_exists_with_default_commit(&self.target_branch_name, commit_id);
-        self.content.add_worktree(PathBuf::from(RELATIVE_TARGET_PATH), &self.target_branch_name);
+        self.content.add_worktree(
+            PathBuf::from(RELATIVE_TARGET_PATH),
+            &self.target_branch_name,
+        );
     }
 
     pub fn publish(&self) {
-        self.manifest.files.iter().for_each(|f| self.target_content.add_file(self.content.worktree().join(f.0.clone()), f.0.clone()));
-        self.target_content.commit(CommitMessage::from_str("docs: new package").unwrap());
+        self.manifest.files.iter().for_each(|f| {
+            self.target_content
+                .add_file(self.content.worktree().join(f.0.clone()), f.0.clone())
+        });
+        self.target_content
+            .commit(CommitMessage::from_str("docs: new package").unwrap());
         self.content.push_to_origin(&self.target_branch_name);
     }
 }
 
 impl Drop for DocumentationPackagingService {
     fn drop(&mut self) {
-        self.content.remove_work_tree(PathBuf::from(RELATIVE_TARGET_PATH));
+        self.content
+            .remove_work_tree(PathBuf::from(RELATIVE_TARGET_PATH));
     }
 }
 
 #[cfg(test)]
 mod tests {
+    use fs_extra::dir;
+    use fs_extra::dir::CopyOptions;
     use std::collections::HashSet;
     use std::fs;
     use std::ops::Add;
     use std::path::PathBuf;
     use std::str::FromStr;
     use std::sync::Mutex;
-    use fs_extra::dir;
-    use fs_extra::dir::CopyOptions;
 
     use crate::packaging::{DocumentationPackagingService, FileDescription, Manifest};
     use crate::tracking::{CommitMessage, ContentTrackingService};
@@ -137,7 +160,10 @@ mod tests {
         let manifest = Manifest::from_str(input).unwrap();
         assert_eq!(manifest.id.0, "docpkg");
         assert_eq!(manifest.name.0, "Documentation Packager");
-        assert_eq!(manifest.files, HashSet::from([FileDescription(PathBuf::from("README.md"))]));
+        assert_eq!(
+            manifest.files,
+            HashSet::from([FileDescription(PathBuf::from("README.md"))])
+        );
     }
 
     fn set_up(test_path: PathBuf) {
@@ -145,7 +171,10 @@ mod tests {
         let origin_path = test_path.join("origin");
         let clone_path = test_path.join("clone");
         let copy_options = CopyOptions::new();
-        let entries: Vec<PathBuf> = fs::read_dir(source_path).unwrap().map(|f| f.unwrap().path()).collect();
+        let entries: Vec<PathBuf> = fs::read_dir(source_path)
+            .unwrap()
+            .map(|f| f.unwrap().path())
+            .collect();
         let content = ContentTrackingService::new(origin_path.clone());
 
         fs::remove_dir_all(test_path).ok();
@@ -153,7 +182,9 @@ mod tests {
         fs_extra::copy_items(&entries, origin_path, &copy_options).unwrap();
         content.initialize();
         content.add_current_worktree();
-        assert!(content.commit(CommitMessage::from_str("feat: initial commit").unwrap()).is_some());
+        assert!(content
+            .commit(CommitMessage::from_str("feat: initial commit").unwrap())
+            .is_some());
         content.clone_to(clone_path);
     }
 

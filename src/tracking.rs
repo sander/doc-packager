@@ -1,7 +1,7 @@
-use std::{fs, str};
 use std::path::{Path, PathBuf};
 use std::process::{Command, Stdio};
 use std::str::FromStr;
+use std::{fs, str};
 
 use regex::Regex;
 
@@ -80,11 +80,18 @@ impl SemanticVersion {
     fn is_met_by(self: &Self, candidate: SemanticVersion) -> bool {
         let name_matches = self.name == candidate.name;
         let compatible_design = self.major == candidate.major && self.minor <= candidate.minor;
-        name_matches && compatible_design && (self.minor < candidate.minor || self.patch <= candidate.patch)
+        name_matches
+            && compatible_design
+            && (self.minor < candidate.minor || self.patch <= candidate.patch)
     }
 
     fn new(name: &str, major: u16, minor: u16, patch: u16) -> SemanticVersion {
-        SemanticVersion { name: name.to_string(), major, minor, patch }
+        SemanticVersion {
+            name: name.to_string(),
+            major,
+            minor,
+            patch,
+        }
     }
 }
 
@@ -118,11 +125,19 @@ impl ContentTrackingService {
     }
 
     pub fn initialize(&self) {
-        self.command().args(["init", &format!("--initial-branch={}", INITIAL_BRANCH_NAME)]).output().unwrap();
+        self.command()
+            .args(["init", &format!("--initial-branch={}", INITIAL_BRANCH_NAME)])
+            .output()
+            .unwrap();
     }
 
     pub fn get_current_branch_name(&self) -> Option<BranchName> {
-        let out = self.command().args(["branch", "--show-current"]).output().unwrap().stdout;
+        let out = self
+            .command()
+            .args(["branch", "--show-current"])
+            .output()
+            .unwrap()
+            .stdout;
         let str = str::from_utf8(&out).unwrap().to_string().replace("\n", "");
         if str == "" {
             None
@@ -133,7 +148,14 @@ impl ContentTrackingService {
 
     /// Risk: origin could be anything, not per se a valid worktree.
     pub fn clone_to(&self, target: PathBuf) {
-        let result = Command::new("git").args(["clone", self.worktree.to_str().unwrap(), target.to_str().unwrap()]).output().unwrap();
+        let result = Command::new("git")
+            .args([
+                "clone",
+                self.worktree.to_str().unwrap(),
+                target.to_str().unwrap(),
+            ])
+            .output()
+            .unwrap();
         println!("Clone result: {:?}", result);
     }
 
@@ -142,7 +164,11 @@ impl ContentTrackingService {
         let full_target_path = self.worktree.join(&target);
         fs::create_dir_all(full_target_path.parent().unwrap()).unwrap();
         fs::copy(source, full_target_path.clone()).unwrap();
-        let result = self.command().args(["add", target.to_str().unwrap()]).output().unwrap();
+        let result = self
+            .command()
+            .args(["add", target.to_str().unwrap()])
+            .output()
+            .unwrap();
         println!("Add result: {:?}", result);
     }
 
@@ -152,26 +178,52 @@ impl ContentTrackingService {
     }
 
     pub fn add_worktree(&self, path: PathBuf, name: &BranchName) {
-        let result = self.command().args(["worktree", "add", "--force", path.to_str().unwrap(), &name.0]).output().unwrap();
+        let result = self
+            .command()
+            .args([
+                "worktree",
+                "add",
+                "--force",
+                path.to_str().unwrap(),
+                &name.0,
+            ])
+            .output()
+            .unwrap();
         println!("Add worktree result: {:?}", result);
     }
 
     pub fn remove_work_tree(&self, path: PathBuf) {
         println!("removing worktree {:?}", path);
-        self.command().args(["worktree", "remove", path.to_str().unwrap()]).output().ok();
+        self.command()
+            .args(["worktree", "remove", path.to_str().unwrap()])
+            .output()
+            .ok();
     }
 
     pub fn create_branch(&self, name: &BranchName, point: impl Point) {
-        let result = self.command().args(["branch", &name.0, point.reference()]).output().unwrap();
+        let result = self
+            .command()
+            .args(["branch", &name.0, point.reference()])
+            .output()
+            .unwrap();
         println!("Create branch result: {:?}", result);
     }
 
     /// Risk: the path could be anything, not per se a valid worktree.
     pub fn commit(&self, message: CommitMessage) -> Option<CommitId> {
-        let result = self.command().args(["commit", "-m", &message.0]).output().unwrap();
+        let result = self
+            .command()
+            .args(["commit", "-m", &message.0])
+            .output()
+            .unwrap();
         println!("Commit result: {:?}", result);
         if result.status.success() {
-            let out = self.command().args(["rev-parse", "HEAD"]).output().unwrap().stdout;
+            let out = self
+                .command()
+                .args(["rev-parse", "HEAD"])
+                .output()
+                .unwrap()
+                .stdout;
             let id = CommitId(str::from_utf8(&out).unwrap().to_string().replace("\n", ""));
             Some(id)
         } else if result.status.code().filter(|c| c == &1).is_some() {
@@ -185,17 +237,41 @@ impl ContentTrackingService {
 
     pub fn commit_tree(&self, name: ObjectName) -> CommitId {
         let message = "build: new documentation package";
-        let command = self.command().args(["commit-tree", &name.0, "-m", message]).output().unwrap().stdout;
-        CommitId(str::from_utf8(&command).unwrap().to_string().replace("\n", ""))
+        let command = self
+            .command()
+            .args(["commit-tree", &name.0, "-m", message])
+            .output()
+            .unwrap()
+            .stdout;
+        CommitId(
+            str::from_utf8(&command)
+                .unwrap()
+                .to_string()
+                .replace("\n", ""),
+        )
     }
 
     pub fn make_tree(&self) -> ObjectName {
-        let command = self.command().args(["mktree"]).stdin(Stdio::null()).output().unwrap().stdout;
-        ObjectName(str::from_utf8(&command).unwrap().to_string().replace("\n", ""))
+        let command = self
+            .command()
+            .args(["mktree"])
+            .stdin(Stdio::null())
+            .output()
+            .unwrap()
+            .stdout;
+        ObjectName(
+            str::from_utf8(&command)
+                .unwrap()
+                .to_string()
+                .replace("\n", ""),
+        )
     }
 
     pub fn push_to_origin(&self, name: &BranchName) {
-        self.command().args(["push", "origin", &name.0]).output().unwrap();
+        self.command()
+            .args(["push", "origin", &name.0])
+            .output()
+            .unwrap();
     }
 }
 
@@ -238,7 +314,10 @@ mod tests {
 
         let git = ContentTrackingService::new(path.clone());
         git.initialize();
-        assert_eq!(git.get_current_branch_name().unwrap().0, INITIAL_BRANCH_NAME);
+        assert_eq!(
+            git.get_current_branch_name().unwrap().0,
+            INITIAL_BRANCH_NAME
+        );
 
         fs::remove_dir_all(path.clone()).unwrap();
     }
@@ -259,7 +338,10 @@ mod tests {
         git.initialize();
         git.add_file(file_path.clone(), target_path.clone());
 
-        assert_eq!(fs::read_to_string(content_path.clone().join(target_path)).unwrap(), content);
+        assert_eq!(
+            fs::read_to_string(content_path.clone().join(target_path)).unwrap(),
+            content
+        );
 
         fs::remove_dir_all(main_path.clone()).unwrap();
     }
@@ -272,7 +354,10 @@ mod tests {
         fs::create_dir_all(main_path.clone()).unwrap();
 
         let git = ContentTrackingService::new(main_path.clone());
-        assert_eq!(git.make_tree().0, "4b825dc642cb6eb9a060e54bf8d69288fbee4904");
+        assert_eq!(
+            git.make_tree().0,
+            "4b825dc642cb6eb9a060e54bf8d69288fbee4904"
+        );
 
         fs::remove_dir_all(main_path.clone()).unwrap();
     }
