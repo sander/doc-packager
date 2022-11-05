@@ -135,14 +135,11 @@ impl Drop for DocumentationPackagingService {
 
 #[cfg(test)]
 mod tests {
-    use fs_extra::dir;
     use fs_extra::dir::CopyOptions;
     use std::collections::HashSet;
     use std::fs;
-    use std::ops::Add;
     use std::path::PathBuf;
     use std::str::FromStr;
-    use std::sync::Mutex;
 
     use crate::packaging::{DocumentationPackagingService, FileDescription, Manifest};
     use crate::tracking::{CommitMessage, ContentTrackingService};
