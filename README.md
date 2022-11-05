@@ -16,7 +16,7 @@ Optionally add a `--rev` parameter to pin the commit to use.
 
 ## How it works
 
-Create a manifest file `Docpkg.toml` in your project root directory. In your continuous integration workflow, call `docpkg publish`.
+Create a manifest file `Docpkg.toml` in your project root directory. In your continuous integration workflow, call `docpkg publish .`.
 
 This publishes the three listed files from your working directory to the origin repository on branch `docpkg/my-package-name/<branch-name>`, where `<branch-name>` is the name of your current working branch. This enables easy access to documentation generated during continuous integration.
 
