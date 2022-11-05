@@ -201,6 +201,8 @@ impl ContentTrackingService {
     }
 
     pub fn create_branch(&self, name: &BranchName, point: impl Point) {
+        let result = self.command().args(["branch", "-a"]).output().unwrap();
+        println!("Current branches: {:?}", result);
         let result = self
             .command()
             .args(["branch", &name.0, point.reference()])
