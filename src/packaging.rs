@@ -27,14 +27,14 @@ struct PackageName(String);
 #[derive(Deserialize, Debug)]
 struct ManifestDto {
     id: String,
-    name: String,
+    // name: String,
     files: Vec<PathBuf>,
 }
 
 #[derive(Debug)]
 pub struct Manifest {
     id: PackageId,
-    name: PackageName,
+    // name: PackageName,
     files: HashSet<FileDescription>,
 }
 
@@ -46,7 +46,7 @@ impl FromStr for Manifest {
         let id = PackageId::from(&dto.id).ok_or(())?;
         Ok(Manifest {
             id,
-            name: PackageName(dto.name),
+            // name: PackageName(dto.name),
             files: dto.files.into_iter().map(|f| FileDescription(f)).collect(),
         })
     }

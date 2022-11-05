@@ -1,4 +1,6 @@
+use clap::error::ErrorKind::Format;
 use log::trace;
+use std::fmt::{Display, Formatter};
 use std::path::{Path, PathBuf};
 use std::process::{Command, Stdio};
 use std::str::FromStr;
@@ -62,6 +64,16 @@ pub struct SemanticVersion {
     patch: u16,
 }
 
+impl Display for SemanticVersion {
+    fn fmt(&self, f: &mut Formatter<'_>) -> std::fmt::Result {
+        write!(
+            f,
+            "{} {}.{}.{}",
+            self.name, self.major, self.minor, self.patch
+        )
+    }
+}
+
 impl FromStr for SemanticVersion {
     type Err = String;
 
@@ -78,7 +90,7 @@ impl FromStr for SemanticVersion {
 }
 
 impl SemanticVersion {
-    fn is_met_by(self: &Self, candidate: SemanticVersion) -> bool {
+    pub fn is_met_by(self: &Self, candidate: &SemanticVersion) -> bool {
         let name_matches = self.name == candidate.name;
         let compatible_design = self.major == candidate.major && self.minor <= candidate.minor;
         name_matches
@@ -86,7 +98,7 @@ impl SemanticVersion {
             && (self.minor < candidate.minor || self.patch <= candidate.patch)
     }
 
-    fn new(name: &str, major: u16, minor: u16, patch: u16) -> SemanticVersion {
+    pub fn new(name: &str, major: u16, minor: u16, patch: u16) -> SemanticVersion {
         SemanticVersion {
             name: name.to_string(),
             major,

@@ -2,14 +2,16 @@
 
 use std::fs;
 use std::path::PathBuf;
+use std::process::exit;
 use std::str::FromStr;
 
 use clap::{arg, Command};
 use env_logger::Env;
-use log::trace;
+use log::{error, trace};
 
 use docpkg::packaging::{DocumentationPackagingService, Manifest};
 use docpkg::tracking;
+use docpkg::tracking::SemanticVersion;
 
 // extern crate lib;
 
@@ -32,6 +34,15 @@ fn main() {
         .init();
 
     trace!("Starting main application");
+
+    let requirement = SemanticVersion::new("git", 2, 37, 0);
+    if !tracking::get_version()
+        .filter(|v| requirement.is_met_by(v))
+        .is_some()
+    {
+        error!("Invalid git version, needs at least {}", requirement);
+        exit(1);
+    }
 
     let contents = fs::read_to_string("Docpkg.toml").unwrap();
     let value: Manifest = Manifest::from_str(&contents).unwrap();
