@@ -1,4 +1,3 @@
-use clap::error::ErrorKind::Format;
 use log::trace;
 use std::fmt::{Display, Formatter};
 use std::path::{Path, PathBuf};
@@ -316,8 +315,8 @@ mod tests {
         let requirement = SemanticVersion::new("git", 2, 37, 0);
         let installed_correct = SemanticVersion::new("git", 2, 37, 3);
         let installed_incorrect = SemanticVersion::new("git", 3, 37, 3);
-        assert!(requirement.is_met_by(installed_correct));
-        assert!(!requirement.is_met_by(installed_incorrect));
+        assert!(requirement.is_met_by(&installed_correct));
+        assert!(!requirement.is_met_by(&installed_incorrect));
     }
 
     #[test]

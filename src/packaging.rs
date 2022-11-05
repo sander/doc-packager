@@ -159,7 +159,6 @@ mod tests {
                      ";
         let manifest = Manifest::from_str(input).unwrap();
         assert_eq!(manifest.id.0, "docpkg");
-        assert_eq!(manifest.name.0, "Documentation Packager");
         assert_eq!(
             manifest.files,
             HashSet::from([FileDescription(PathBuf::from("README.md"))])
