@@ -201,12 +201,19 @@ impl ContentTrackingService {
     }
 
     pub fn create_branch(&self, name: &BranchName, point: impl Point) {
+        let result = self.command().args(["branch", "-a"]).output().unwrap();
+        println!("Current branches: {:?}", result);
         let result = self
             .command()
             .args(["branch", &name.0, point.reference()])
             .output()
             .unwrap();
-        println!("Create branch result: {:?}", result);
+        println!(
+            "Create branch result (name: {:?}, point: {:?}): {:?}",
+            name,
+            point.reference(),
+            result
+        );
     }
 
     /// Risk: the path could be anything, not per se a valid worktree.
@@ -268,10 +275,12 @@ impl ContentTrackingService {
     }
 
     pub fn push_to_origin(&self, name: &BranchName) {
-        self.command()
+        let result = self
+            .command()
             .args(["push", "origin", &name.0])
             .output()
             .unwrap();
+        println!("Push to origin result: {:?}", result);
     }
 }
 
