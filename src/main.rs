@@ -6,8 +6,8 @@ use std::process::exit;
 use std::str::FromStr;
 
 use clap::{arg, Command};
-use env_logger::Env;
-use log::{error, trace};
+use log::error;
+use log::trace;
 
 use docpkg::packaging::{DocumentationPackagingService, Manifest};
 use docpkg::tracking;
@@ -29,9 +29,7 @@ fn cli() -> Command {
 }
 
 fn main() {
-    env_logger::Builder::from_env(Env::default().default_filter_or("trace"))
-        .format_timestamp(None)
-        .init();
+    pretty_env_logger::init();
 
     trace!("Starting main application");
 
