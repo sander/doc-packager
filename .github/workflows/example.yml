@@ -23,7 +23,7 @@ jobs:
           git config --global user.name "github-actions[bot]"
           git config --global user.email "github-actions[bot]@users.noreply.github.com"
       - name: Install Documentation Packager
-        run: cargo install --git https://github.com/sander/docpkg --rev $docpkg_revision
+        run: cargo install --git https://github.com/sander/docpkg --rev $docpkg_revision --force
         env:
           docpkg_revision: 73cff7f449329841f62daae7cccb401516ffcfea
       - name: Publish documentation package
