@@ -23,9 +23,10 @@ jobs:
           git config --global user.name "github-actions[bot]"
           git config --global user.email "github-actions[bot]@users.noreply.github.com"
       - name: Install Documentation Packager
-        run: cargo install --git https://github.com/sander/docpkg --rev $docpkg_revision --force
+        run: cargo install --git https://github.com/sander/docpkg --rev $docpkg_revision
         env:
           docpkg_revision: 73cff7f449329841f62daae7cccb401516ffcfea
+        continue-on-error: true # An error usually means that docpkg was already installed
       - name: Publish documentation package
         run: docpkg publish $source_root
         env:
