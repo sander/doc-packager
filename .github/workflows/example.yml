@@ -1,0 +1,32 @@
+name: Example
+on:
+  workflow_dispatch:
+jobs:
+  docpkg:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Check out current branch and docpkg branches
+        uses: actions/checkout
+        with:
+          fetch-depth: 0
+      - name: Cache Cargo home containing Documentation Packager source and binary
+        uses: actions/cache
+        with:
+          path: |
+            ~/.cargo/bin/
+            ~/.cargo/registry/index/
+            ~/.cargo/registry/cache/
+            ~/.cargo/git/db/
+          key: ${{ runner.os }}-cargo-${{ hashFiles('**/Cargo.lock') }}
+      - name: Configure Git user
+        run: |
+          git config --global user.name "github-actions[bot]"
+          git config --global user.email "github-actions[bot]@users.noreply.github.com"
+      - name: Install Documentation Packager
+        run: cargo install --git https://github.com/sander/docpkg --rev $INPUT_DOCPKG_REVISION
+        with:
+          docpkg_revision: 73cff7f449329841f62daae7cccb401516ffcfea
+      - name: Publish documentation package
+        run: docpkg publish $INPUT_SOURCE_ROOT
+        with:
+          source_root: resources/test/example
