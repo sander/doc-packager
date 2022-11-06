@@ -1,3 +1,4 @@
+[package]
 id = "ex-p001"
 name = "Documentation Packager Example Project"
 files = [

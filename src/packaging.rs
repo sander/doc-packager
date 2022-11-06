@@ -25,16 +25,19 @@ impl PackageId {
 struct PackageName(String);
 
 #[derive(Deserialize, Debug)]
-struct ManifestDto {
+struct PackageDto {
     id: String,
-    // name: String,
     files: Vec<PathBuf>,
+}
+
+#[derive(Deserialize, Debug)]
+struct ManifestDto {
+    package: PackageDto,
 }
 
 #[derive(Debug)]
 pub struct Manifest {
     id: PackageId,
-    // name: PackageName,
     files: HashSet<FileDescription>,
 }
 
@@ -43,11 +46,16 @@ impl FromStr for Manifest {
 
     fn from_str(s: &str) -> Result<Self, Self::Err> {
         let dto: ManifestDto = toml::from_str(s).or(Err(()))?;
-        let id = PackageId::from(&dto.id).ok_or(())?;
+        let id = PackageId::from(&dto.package.id).ok_or(())?;
         Ok(Manifest {
             id,
             // name: PackageName(dto.name),
-            files: dto.files.into_iter().map(|f| FileDescription(f)).collect(),
+            files: dto
+                .package
+                .files
+                .into_iter()
+                .map(|f| FileDescription(f))
+                .collect(),
         })
     }
 }
@@ -148,7 +156,8 @@ mod tests {
 
     #[test]
     fn parse_manifest() {
-        let input = "id = \"docpkg\"\n\
+        let input = "[package]\n\
+                     id = \"docpkg\"\n\
                      name = \"Documentation Packager\"\n\
                      files = [\n\
                        \"README.md\"\n\
