@@ -37,6 +37,9 @@ jobs:
       - run: cargo test --verbose
         env:
           RUST_BACKTRACE: 1
+          RUST_LOG: trace
       - run: target/debug/docpkg publish .
         env:
           BRANCH_NAME: ${{ github.head_ref || github.ref_name }}
+          RUST_BACKTRACE: 1
+          RUST_LOG: trace
