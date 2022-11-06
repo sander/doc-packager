@@ -31,3 +31,4 @@ jobs:
         run: docpkg publish $source_root
         env:
           source_root: resources/test/example
+          BRANCH_NAME: ${{ github.head_ref || github.ref_name }}
