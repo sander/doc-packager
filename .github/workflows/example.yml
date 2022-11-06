@@ -6,11 +6,11 @@ jobs:
     runs-on: ubuntu-latest
     steps:
       - name: Check out current branch and docpkg branches
-        uses: actions/checkout
+        uses: actions/checkout@v3
         with:
           fetch-depth: 0
       - name: Cache Cargo home containing Documentation Packager source and binary
-        uses: actions/cache
+        uses: actions/cache@v3
         with:
           path: |
             ~/.cargo/bin/
