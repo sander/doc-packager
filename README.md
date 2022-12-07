@@ -27,3 +27,7 @@ For help, call `docpkg help`.
 ## Maintenance guide
 
 Build this project using [Cargo](https://doc.rust-lang.org/cargo/).
+
+## Additional documentation integration scripts
+
+This repository contains a set of standalone [scripts for documentation integration](scripts/README.md).
