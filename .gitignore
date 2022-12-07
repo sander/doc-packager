@@ -1,3 +1,6 @@
 /target
 /.idea
-/.DS_Store
+.DS_Store
+.metals
+.bsp
+.scala-build
