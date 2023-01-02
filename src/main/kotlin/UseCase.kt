@@ -15,12 +15,14 @@ class UseCase(id: String, title: String, designScope: DesignScope, goalLevel: Go
         SYSTEM("📦"),
         COMPONENT("🔩")
     }
+
     enum class GoalLevel(val icon: String, val character: String) {
         VERY_HIGH_SUMMARY("☁︎", "++"),
         SUMMARY("🪁", "+"),
         USER_GOAL("🌊", "!"),
         SUB_FUNCTION("🐟", "−")
     }
+
     data class Metadata(val id: String, val title: String, val designScope: DesignScope, val goalLevel: GoalLevel)
     data class System(val name: String, val description: String)
     data class Step(val label: String, val content: StepContent)
@@ -44,12 +46,12 @@ class UseCase(id: String, title: String, designScope: DesignScope, goalLevel: Go
 
     fun writeTo(path: Path) {
         Files.createDirectories(path.parent)
-        FileWriter(path.toFile()).use { fileWriter ->
-            PrintWriter(fileWriter).use { printWriter ->
-                printWriter.println("## Use case ${metadata.id} \uD83D\uDCE6${metadata.goalLevel.icon}")
-                printWriter.println("# ${metadata.title}")
-            }
-        }
+        FileWriter(path.toFile()).use { PrintWriter(it).use(::writeTo) }
+    }
+
+    private fun writeTo(writer: PrintWriter) {
+        writer.println("## Use case ${metadata.id} \uD83D\uDCE6${metadata.goalLevel.icon}")
+        writer.println("# ${metadata.title}")
     }
 
     companion object {
