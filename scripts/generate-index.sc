@@ -58,7 +58,7 @@ case class Node(document: Document, children: List[Node]):
   override def toString(): String =
     val title = document.title.escape
     val url = directory.relativize(document.path)
-    val head = s"- [$title]($url})"
+    val head = s"- [$title]($url)"
     val tail = children.map("    " + _.toString.indent(4).trim())
     (head :: tail).mkString("\n")
 object Node:
