@@ -11,4 +11,16 @@ internal class UseCaseTest {
         uc.activity("01", x, "does something")
         uc.writeTo(Path.of("doc/uc/002.md"))
     }
+
+    val x = Object()
+    val y = Object()
+    var uc = UseCase2("UC003", "My use case")
+
+    @Test
+    fun useCase2Test() {
+        uc = uc
+            .define(x, "x", "description", listOf())
+            .define(y, "y", "foo", listOf())
+        println(uc)
+    }
 }
