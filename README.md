@@ -2,7 +2,9 @@
 
 ## Context
 
+<!-- Start transclusion: notes/evergreen/Documentation Packager.md -->
 **Documentation Packager** enables product developers to combine evergreen and living documentation into human-readable packages, in order to collaborate effectively with stakeholders on complex systems.
+<!-- End transclusion -->
 
 ## How to install it
 
@@ -18,6 +20,7 @@ Optionally add a `--rev` parameter to pin the commit to use.
 
 ## How it works
 
+<!-- Start transclusion: notes/evergreen/How to use?.md -->
 Create a manifest file `Docpkg.toml` in your project root directory. In your continuous integration workflow, call `docpkg edit .` and `docpkg publish .`.
 
 The `edit` command handles transclusions. This enables you to combine multiple evergreen notes into a single document. See this file’s source code for an example.
@@ -29,10 +32,13 @@ For a functional example, see the [Docpkg.toml](https://github.com/sander/docpkg
 For help, call `docpkg help`.
 
 Note that there is no requirement to use both the `edit` and `publish` commands. For example, if you wish to only process transclusions on your `main` branch, just use `edit`.
+<!-- End transclusion -->
 
 ## Maintenance guide
 
+<!-- Start transclusion: notes/evergreen/How to maintain?.md -->
 Build this project using [Cargo](https://doc.rust-lang.org/cargo/).
+<!-- End transclusion -->
 
 ## Additional documentation integration scripts
 
