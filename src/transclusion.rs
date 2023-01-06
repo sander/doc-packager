@@ -21,7 +21,7 @@ where
     P: AsRef<Path>,
 {
     const REGEX: &str =
-        r"(<!-- *Start transclusion: ?(.*?[^ ]) *-->\n).*?(\n<!-- *End transclusion *-->)";
+        r"(<!-- *Start transclusion: ?(.*?[^ ]) *-->).*?(<!-- *End transclusion *-->)";
     let content = fs::read_to_string(&path).unwrap();
     let regex = RegexBuilder::new(REGEX)
         .multi_line(true)
@@ -38,7 +38,9 @@ where
             match inclusion {
                 TagInclusion::RenderTags => [
                     captures.get(1).unwrap().as_str(),
+                    "\n",
                     trimmed_transclusion,
+                    "\n",
                     captures.get(3).unwrap().as_str(),
                 ]
                 .join(""),
