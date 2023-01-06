@@ -9,7 +9,7 @@ use serde_derive::Deserialize;
 use crate::tracking::{BranchName, CommitId, CommitMessage, ContentTrackingService};
 
 #[derive(PartialOrd, PartialEq, Debug, Eq, Hash)]
-struct FileDescription(PathBuf);
+pub struct FileDescription(pub PathBuf);
 
 #[derive(PartialOrd, PartialEq, Debug)]
 struct PackageId(String);
@@ -38,7 +38,7 @@ struct ManifestDto {
 #[derive(Debug)]
 pub struct Manifest {
     id: PackageId,
-    files: HashSet<FileDescription>,
+    pub files: HashSet<FileDescription>,
 }
 
 impl FromStr for Manifest {
