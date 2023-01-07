@@ -25,7 +25,7 @@ jobs:
       - name: Install Documentation Packager
         run: cargo install --git https://github.com/sander/docpkg --rev $docpkg_revision
         env:
-          docpkg_revision: 73cff7f449329841f62daae7cccb401516ffcfea
+          docpkg_revision: 1628fd9b74fb8e90604df8d49e2ee4978317ddc0
         continue-on-error: true # An error usually means that docpkg was already installed
       - name: Publish documentation package
         run: docpkg publish $source_root
