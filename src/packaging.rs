@@ -34,8 +34,8 @@ struct PackageDto {
 #[derive(Deserialize, Debug)]
 struct ManifestDto {
     package: PackageDto,
-    release: Vec<ReleaseDto>,
-    standard: Vec<StandardDto>,
+    release: Option<Vec<ReleaseDto>>,
+    standard: Option<Vec<StandardDto>>,
 }
 
 #[derive(Debug)]
@@ -59,7 +59,7 @@ impl FromStr for Manifest {
                 .into_iter()
                 .map(|f| FileDescription(f))
                 .collect(),
-            compliance_matrix: compliance_matrix(dto.release, dto.standard),
+            compliance_matrix: compliance_matrix(dto.release.unwrap_or(Vec::new()), dto.standard.unwrap_or(Vec::new())),
         })
     }
 }
@@ -153,8 +153,7 @@ mod tests {
     use std::path::PathBuf;
     use std::str::FromStr;
 
-    use crate::compliance::compliance_matrix;
-    use crate::packaging::{DocumentationPackagingService, FileDescription, Manifest, ManifestDto};
+    use crate::packaging::{DocumentationPackagingService, FileDescription, Manifest};
     use crate::tracking::{CommitMessage, ContentTrackingService};
 
     const TEST_ROOT_PATH: &str = "target/test-packaging-integration";
