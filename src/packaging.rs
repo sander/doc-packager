@@ -59,7 +59,10 @@ impl FromStr for Manifest {
                 .into_iter()
                 .map(|f| FileDescription(f))
                 .collect(),
-            compliance_matrix: compliance_matrix(dto.release.unwrap_or(Vec::new()), dto.standard.unwrap_or(Vec::new())),
+            compliance_matrix: compliance_matrix(
+                dto.release.unwrap_or(Vec::new()),
+                dto.standard.unwrap_or(Vec::new()),
+            ),
         })
     }
 }
