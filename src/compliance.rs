@@ -310,7 +310,11 @@ impl ComplianceMatrix {
                                 demos.iter().flat_map(|d| d.instructions.clone()).collect();
 
                             for e in [&who, &what, &how] {
-                                row.push(if e.is_empty() { "?".to_string() } else { e.join("\n\n") });
+                                row.push(if e.is_empty() {
+                                    "?".to_string()
+                                } else {
+                                    e.join("\n\n")
+                                });
                             }
                         }
                         _ => {
