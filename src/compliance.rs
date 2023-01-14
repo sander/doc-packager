@@ -98,62 +98,87 @@ pub enum ControlDesignEvidence {
 }
 
 pub fn compliance_matrix(release: Vec<ReleaseDto>, standard: Vec<StandardDto>) -> ComplianceMatrix {
-    let releases: Vec<String> = release.iter().map(|r| {
-        r.id.clone()
-    }).collect();
-    let standards = standard.iter().map(|s| {
-        if s.id.is_none() && s.uri.is_none() && s.title.is_none() {
-            panic!("invalid standard definition");
-        }
-        let requirements = s.requirement.iter().map(|requirement| {
-            let mut timeline: Vec<Applicability> = vec!();
-            let mut last = Applicability::Undefined;
-            for release in releases.iter() {
-                let since = requirement.since.clone().unwrap_or(HashMap::new());
-                let result = since.get(release);
-                let applicability = match result {
-                    Some(ApplicabilityDto { out: Some(_), control: None }) => Applicability::NotApplicable,
-                    Some(ApplicabilityDto { out: None, control: Some(control) }) => {
-                        let controls = control.iter().map(|c| {
-                            let demos = c.demo.clone().unwrap_or(Vec::new()).iter().map(|d| {
-                                Demo {
-                                    people: d.person.clone(),
-                                    things: d.thing.clone(),
-                                    instructions: d.instruction.clone(),
-                                }
-                            }).collect();
-                            Control {
-                                design_evidence: match (&c.code, &c.doc) {
-                                    (Some(code), None) => ControlDesignEvidence::Code(code.clone()),
-                                    (None, Some(doc)) => ControlDesignEvidence::Document(doc.clone()),
-                                    _ => panic!("invalid design evidence"),
-                                },
-                                annotation: c.annotation.clone(),
-                                demos,
+    let releases: Vec<String> = release.iter().map(|r| r.id.clone()).collect();
+    let standards = standard
+        .iter()
+        .map(|s| {
+            if s.id.is_none() && s.uri.is_none() && s.title.is_none() {
+                panic!("invalid standard definition");
+            }
+            let requirements = s
+                .requirement
+                .iter()
+                .map(|requirement| {
+                    let mut timeline: Vec<Applicability> = vec![];
+                    let mut last = Applicability::Undefined;
+                    for release in releases.iter() {
+                        let since = requirement.since.clone().unwrap_or(HashMap::new());
+                        let result = since.get(release);
+                        let applicability = match result {
+                            Some(ApplicabilityDto {
+                                out: Some(_),
+                                control: None,
+                            }) => Applicability::NotApplicable,
+                            Some(ApplicabilityDto {
+                                out: None,
+                                control: Some(control),
+                            }) => {
+                                let controls = control
+                                    .iter()
+                                    .map(|c| {
+                                        let demos = c
+                                            .demo
+                                            .clone()
+                                            .unwrap_or(Vec::new())
+                                            .iter()
+                                            .map(|d| Demo {
+                                                people: d.person.clone(),
+                                                things: d.thing.clone(),
+                                                instructions: d.instruction.clone(),
+                                            })
+                                            .collect();
+                                        Control {
+                                            design_evidence: match (&c.code, &c.doc) {
+                                                (Some(code), None) => {
+                                                    ControlDesignEvidence::Code(code.clone())
+                                                }
+                                                (None, Some(doc)) => {
+                                                    ControlDesignEvidence::Document(doc.clone())
+                                                }
+                                                _ => panic!("invalid design evidence"),
+                                            },
+                                            annotation: c.annotation.clone(),
+                                            demos,
+                                        }
+                                    })
+                                    .collect();
+                                Applicability::Applicable(controls)
                             }
-                        }).collect();
-                        Applicability::Applicable(controls)
+                            None => last.clone(),
+                            _ => panic!("invalid applicability"),
+                        };
+                        last = applicability.clone();
+                        timeline.push(applicability);
                     }
-                    None => last.clone(),
-                    _ => panic!("invalid applicability"),
-                };
-                last = applicability.clone();
-                timeline.push(applicability);
+                    Requirement {
+                        id: requirement.id.clone(),
+                        annotation: requirement.annotation.clone(),
+                        timeline,
+                    }
+                })
+                .collect();
+            Standard {
+                id: s.id.clone(),
+                title: s.title.clone(),
+                uri: s.uri.clone(),
+                requirements,
             }
-            Requirement {
-                id: requirement.id.clone(),
-                annotation: requirement.annotation.clone(),
-                timeline,
-            }
-        }).collect();
-        Standard {
-            id: s.id.clone(),
-            title: s.title.clone(),
-            uri: s.uri.clone(),
-            requirements,
-        }
-    }).collect();
-    ComplianceMatrix { releases, standards }
+        })
+        .collect();
+    ComplianceMatrix {
+        releases,
+        standards,
+    }
 }
 
 fn escape(s: &str) -> String {
@@ -167,13 +192,20 @@ fn write_row<W: Write>(w: &mut W, r: &Vec<String>) {
 
 impl Standard {
     fn name(&self) -> String {
-        self.id.clone().or(self.title.clone()).or(self.uri.clone()).unwrap()
+        self.id
+            .clone()
+            .or(self.title.clone())
+            .or(self.uri.clone())
+            .unwrap()
     }
 }
 
 impl ComplianceMatrix {
     pub fn to_csv<W: Write>(&self, w: &mut W) {
-        let mut header: Vec<String> = vec!("Standard", "Requirement", "Annotation").iter().map(|s| s.to_string()).collect();
+        let mut header: Vec<String> = vec!["Standard", "Requirement", "Annotation"]
+            .iter()
+            .map(|s| s.to_string())
+            .collect();
         for r in &self.releases {
             header.push(format!("{}: Design", &r));
         }
@@ -185,24 +217,36 @@ impl ComplianceMatrix {
         write_row(w, &header);
         for s in &self.standards {
             for r in &s.requirements {
-                let mut row = vec!(s.name(), r.id.clone(), r.annotation.clone().unwrap_or("N/A".to_string()));
+                let mut row = vec![
+                    s.name(),
+                    r.id.clone(),
+                    r.annotation.clone().unwrap_or("N/A".to_string()),
+                ];
                 for t in &r.timeline {
                     let applicability = match t {
                         Applicability::Undefined => "?".to_string(),
                         Applicability::NotApplicable => "N/A".to_string(),
                         Applicability::Applicable(c) => {
-                            let controls: Vec<String> = c.iter().map(|control| {
-                                let mut s = String::new();
-                                match &control.design_evidence {
-                                    ControlDesignEvidence::Code(path) => write!(s, "Code: {}", path.to_string_lossy()),
-                                    ControlDesignEvidence::Document(path) => write!(s, "Document: {}", path.to_string_lossy()),
-                                }.unwrap();
-                                match &control.annotation {
-                                    Some(a) => write!(s, "\n{}", a).unwrap(),
-                                    None => (),
-                                };
-                                s
-                            }).collect();
+                            let controls: Vec<String> = c
+                                .iter()
+                                .map(|control| {
+                                    let mut s = String::new();
+                                    match &control.design_evidence {
+                                        ControlDesignEvidence::Code(path) => {
+                                            write!(s, "Code: {}", path.to_string_lossy())
+                                        }
+                                        ControlDesignEvidence::Document(path) => {
+                                            write!(s, "Document: {}", path.to_string_lossy())
+                                        }
+                                    }
+                                    .unwrap();
+                                    match &control.annotation {
+                                        Some(a) => write!(s, "\n{}", a).unwrap(),
+                                        None => (),
+                                    };
+                                    s
+                                })
+                                .collect();
                             controls.join("\n\n")
                         }
                     };
@@ -212,9 +256,12 @@ impl ComplianceMatrix {
                     match t {
                         Applicability::Applicable(c) => {
                             let demos: Vec<&Demo> = c.iter().flat_map(|c| &c.demos).collect();
-                            let who: Vec<String> = demos.iter().flat_map(|d| d.people.clone()).collect();
-                            let what: Vec<String> = demos.iter().flat_map(|d| d.things.clone()).collect();
-                            let how: Vec<String> = demos.iter().flat_map(|d| d.instructions.clone()).collect();
+                            let who: Vec<String> =
+                                demos.iter().flat_map(|d| d.people.clone()).collect();
+                            let what: Vec<String> =
+                                demos.iter().flat_map(|d| d.things.clone()).collect();
+                            let how: Vec<String> =
+                                demos.iter().flat_map(|d| d.instructions.clone()).collect();
 
                             row.push(who.join("\n\n"));
                             row.push(what.join("\n\n"));

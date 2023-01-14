@@ -153,8 +153,8 @@ mod tests {
     use std::path::PathBuf;
     use std::str::FromStr;
 
-    use crate::packaging::{DocumentationPackagingService, FileDescription, Manifest, ManifestDto};
     use crate::compliance::compliance_matrix;
+    use crate::packaging::{DocumentationPackagingService, FileDescription, Manifest, ManifestDto};
     use crate::tracking::{CommitMessage, ContentTrackingService};
 
     const TEST_ROOT_PATH: &str = "target/test-packaging-integration";
