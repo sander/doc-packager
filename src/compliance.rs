@@ -309,9 +309,9 @@ impl ComplianceMatrix {
                             let how: Vec<String> =
                                 demos.iter().flat_map(|d| d.instructions.clone()).collect();
 
-                            row.push(who.join("\n\n"));
-                            row.push(what.join("\n\n"));
-                            row.push(how.join("\n\n"));
+                            for e in [&who, &what, &how] {
+                                row.push(if e.is_empty() { "?".to_string() } else { e.join("\n\n") });
+                            }
                         }
                         _ => {
                             for _ in 0..3 {
