@@ -3,7 +3,7 @@ id = "docpkg"
 name = "Documentation Packager"
 files = [
   "README.md",
-  "table/compliance-matrix.csv",
+  "table/compliance.csv",
 ]
 
 [[release]]
