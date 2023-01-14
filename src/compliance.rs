@@ -39,6 +39,14 @@ pub struct ControlDto {
     doc: Option<PathBuf>,
     code: Option<PathBuf>,
     annotation: Option<String>,
+    demo: Option<Vec<DemoDto>>,
+}
+
+#[derive(Deserialize, Debug, Clone)]
+pub struct DemoDto {
+    person: Vec<String>,
+    thing: Vec<String>,
+    instruction: Vec<String>,
 }
 
 #[derive(Debug)]
@@ -73,6 +81,14 @@ pub enum Applicability {
 pub struct Control {
     design_evidence: ControlDesignEvidence,
     annotation: Option<String>,
+    demos: Vec<Demo>,
+}
+
+#[derive(Debug, Clone)]
+pub struct Demo {
+    people: Vec<String>,
+    things: Vec<String>,
+    instructions: Vec<String>,
 }
 
 #[derive(Debug, Clone)]
@@ -99,6 +115,13 @@ pub fn compliance_matrix(release: Vec<ReleaseDto>, standard: Vec<StandardDto>) -
                     Some(ApplicabilityDto { out: Some(_), control: None }) => Applicability::NotApplicable,
                     Some(ApplicabilityDto { out: None, control: Some(control) }) => {
                         let controls = control.iter().map(|c| {
+                            let demos = c.demo.clone().unwrap_or(Vec::new()).iter().map(|d| {
+                                Demo {
+                                    people: d.person.clone(),
+                                    things: d.thing.clone(),
+                                    instructions: d.instruction.clone(),
+                                }
+                            }).collect();
                             Control {
                                 design_evidence: match (&c.code, &c.doc) {
                                     (Some(code), None) => ControlDesignEvidence::Code(code.clone()),
@@ -106,6 +129,7 @@ pub fn compliance_matrix(release: Vec<ReleaseDto>, standard: Vec<StandardDto>) -
                                     _ => panic!("invalid design evidence"),
                                 },
                                 annotation: c.annotation.clone(),
+                                demos,
                             }
                         }).collect();
                         Applicability::Applicable(controls)
@@ -153,6 +177,11 @@ impl ComplianceMatrix {
         for r in &self.releases {
             header.push(format!("{}: Design", &r));
         }
+        for r in &self.releases {
+            header.push(format!("{}: Demo – who", &r));
+            header.push(format!("{}: Demo – what", &r));
+            header.push(format!("{}: Demo – how", &r));
+        }
         write_row(w, &header);
         for s in &self.standards {
             for r in &s.requirements {
@@ -178,6 +207,25 @@ impl ComplianceMatrix {
                         }
                     };
                     row.push(applicability.to_string());
+                }
+                for t in &r.timeline {
+                    match t {
+                        Applicability::Applicable(c) => {
+                            let demos: Vec<&Demo> = c.iter().flat_map(|c| &c.demos).collect();
+                            let who: Vec<String> = demos.iter().flat_map(|d| d.people.clone()).collect();
+                            let what: Vec<String> = demos.iter().flat_map(|d| d.things.clone()).collect();
+                            let how: Vec<String> = demos.iter().flat_map(|d| d.instructions.clone()).collect();
+
+                            row.push(who.join("\n\n"));
+                            row.push(what.join("\n\n"));
+                            row.push(how.join("\n\n"));
+                        }
+                        _ => {
+                            for _ in 0..3 {
+                                row.push("N/A".to_string());
+                            }
+                        }
+                    }
                 }
                 write_row(w, &row);
             }

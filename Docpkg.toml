@@ -22,6 +22,11 @@ id = "1"
 doc = "README.md"
 annotation = "See CLI definition"
 
+[[standard.requirement.since.v1.control.demo]]
+person = [ "Sander" ]
+thing = [ "CLI" ]
+instruction = [ "Show that this indeed covers all interface" ]
+
 [[standard.requirement.since.v1.control]]
 code = "src/main.rs"
 
