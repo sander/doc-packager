@@ -1,0 +1,8 @@
+"Standard","Requirement","Annotation","v1: Design","v2: Design","v1: Demo – who","v1: Demo – what","v1: Demo – how","v2: Demo – who","v2: Demo – what","v2: Demo – how"
+"SemVer 2.0.0","1","N/A","Document: README.md
+See CLI definition
+
+Code: src/main.rs","N/A","Sander","CLI","Show that this indeed covers all interface","N/A","N/A","N/A"
+"SemVer 2.0.0","2","N/A","Code: Cargo.toml","Code: Cargo.toml","","","","","",""
+"Conventional Commits 1.0.0","1","Keeping merge commits out of scope.","?","?","N/A","N/A","N/A","N/A","N/A","N/A"
+"Conventional Commits 1.0.0","2","N/A","?","?","N/A","N/A","N/A","N/A","N/A","N/A"
