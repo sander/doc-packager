@@ -15,6 +15,14 @@ pub struct StandardDto {
     title: Option<String>,
     uri: Option<String>,
     requirement: Vec<RequirementDto>,
+    last_audit: Option<LastAuditDto>,
+}
+
+#[derive(Deserialize, Debug, Clone)]
+pub struct LastAuditDto {
+    date: String,
+    report: String,
+    adequate: bool,
 }
 
 #[derive(Deserialize, Debug)]
@@ -61,6 +69,14 @@ pub struct Standard {
     title: Option<String>,
     uri: Option<String>,
     requirements: Vec<Requirement>,
+    last_audit: Option<LastAudit>,
+}
+
+#[derive(Debug)]
+pub struct LastAudit {
+    date: String,
+    report: String,
+    adequate: bool,
 }
 
 #[derive(Debug)]
@@ -167,11 +183,17 @@ pub fn compliance_matrix(release: Vec<ReleaseDto>, standard: Vec<StandardDto>) -
                     }
                 })
                 .collect();
+            let last_audit = s.last_audit.clone().map(|a| LastAudit {
+                date: a.date.clone(),
+                report: a.report.clone(),
+                adequate: a.adequate,
+            });
             Standard {
                 id: s.id.clone(),
                 title: s.title.clone(),
                 uri: s.uri.clone(),
                 requirements,
+                last_audit,
             }
         })
         .collect();
@@ -201,6 +223,30 @@ impl Standard {
 }
 
 impl ComplianceMatrix {
+    pub fn audits_to_csv<W: Write>(&self, w: &mut W) {
+        let header = vec![
+            "Standard".to_string(),
+            "Date".to_string(),
+            "Report".to_string(),
+            "Adequate".to_string(),
+        ];
+        write_row(w, &header);
+        for s in &self.standards {
+            match &s.last_audit {
+                Some(a) => {
+                    let row = vec![
+                        s.name(),
+                        a.date.clone(),
+                        a.report.clone(),
+                        (if a.adequate { "Yes" } else { "No" }).to_string(),
+                    ];
+                    write_row(w, &row);
+                }
+                None => (),
+            }
+        }
+    }
+
     pub fn to_csv<W: Write>(&self, w: &mut W) {
         let mut header: Vec<String> = vec!["Standard", "Requirement", "Annotation"]
             .iter()

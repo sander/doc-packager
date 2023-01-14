@@ -75,16 +75,30 @@ fn main() {
         }
         Some(("audit", sub_matches)) => {
             let path = sub_matches.get_one::<PathBuf>("dir").expect("required");
+            let table_path = path.join("table");
+            let compliance_path = table_path.join("compliance.csv");
+            let audits_path = table_path.join("audits.csv");
+
             let manifest_path = path.join("Docpkg.toml");
             let contents = fs::read_to_string(manifest_path).unwrap();
             let manifest = Manifest::from_str(&contents).unwrap();
+            fs::create_dir_all(&table_path).unwrap();
+
             let mut s = String::new();
             manifest.compliance_matrix.to_csv(&mut s);
-            let table_path = path.join("table");
-            fs::create_dir_all(&table_path).unwrap();
-            let file_path = table_path.join("compliance.csv");
-            fs::write(&file_path, s).unwrap();
-            println!("Written to {}", file_path.to_string_lossy());
+            fs::write(&compliance_path, s).unwrap();
+            println!(
+                "Written compliance matrix to {}",
+                compliance_path.to_string_lossy()
+            );
+
+            s = String::new();
+            manifest.compliance_matrix.audits_to_csv(&mut s);
+            fs::write(&audits_path, s).unwrap();
+            println!(
+                "Written audit overview to {}",
+                audits_path.to_string_lossy()
+            );
         }
         _ => unreachable!(),
     }

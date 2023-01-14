@@ -15,6 +15,11 @@ id = "v2"
 [[standard]]
 id = "SemVer 2.0.0"
 
+[standard.last_audit]
+date = "2023-01-14"
+report = "about:blank"
+adequate = false
+
 [[standard.requirement]]
 id = "1"
 

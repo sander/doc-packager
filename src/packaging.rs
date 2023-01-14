@@ -46,11 +46,11 @@ pub struct Manifest {
 }
 
 impl FromStr for Manifest {
-    type Err = ();
+    type Err = String;
 
     fn from_str(s: &str) -> Result<Self, Self::Err> {
-        let dto: ManifestDto = toml::from_str(s).or(Err(()))?;
-        let id = PackageId::from(&dto.package.id).ok_or(())?;
+        let dto: ManifestDto = toml::from_str(s).map_err(|e| e.to_string())?;
+        let id = PackageId::from(&dto.package.id).ok_or("could not parse package id")?;
         Ok(Manifest {
             id,
             files: dto
