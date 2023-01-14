@@ -6,6 +6,7 @@ use std::{env, fs};
 use regex::Regex;
 use serde_derive::Deserialize;
 
+use crate::compliance::{compliance_matrix, ComplianceMatrix, ReleaseDto, StandardDto};
 use crate::tracking::{BranchName, CommitId, CommitMessage, ContentTrackingService};
 
 #[derive(PartialOrd, PartialEq, Debug, Eq, Hash)]
@@ -33,29 +34,35 @@ struct PackageDto {
 #[derive(Deserialize, Debug)]
 struct ManifestDto {
     package: PackageDto,
+    release: Option<Vec<ReleaseDto>>,
+    standard: Option<Vec<StandardDto>>,
 }
 
 #[derive(Debug)]
 pub struct Manifest {
     id: PackageId,
     pub files: HashSet<FileDescription>,
+    pub compliance_matrix: ComplianceMatrix,
 }
 
 impl FromStr for Manifest {
-    type Err = ();
+    type Err = String;
 
     fn from_str(s: &str) -> Result<Self, Self::Err> {
-        let dto: ManifestDto = toml::from_str(s).or(Err(()))?;
-        let id = PackageId::from(&dto.package.id).ok_or(())?;
+        let dto: ManifestDto = toml::from_str(s).map_err(|e| e.to_string())?;
+        let id = PackageId::from(&dto.package.id).ok_or("could not parse package id")?;
         Ok(Manifest {
             id,
-            // name: PackageName(dto.name),
             files: dto
                 .package
                 .files
                 .into_iter()
                 .map(|f| FileDescription(f))
                 .collect(),
+            compliance_matrix: compliance_matrix(
+                dto.release.unwrap_or(Vec::new()),
+                dto.standard.unwrap_or(Vec::new()),
+            ),
         })
     }
 }
