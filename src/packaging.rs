@@ -6,6 +6,7 @@ use std::{env, fs};
 use regex::Regex;
 use serde_derive::Deserialize;
 
+use crate::compliance::{compliance_matrix, ComplianceMatrix, ReleaseDto, StandardDto};
 use crate::tracking::{BranchName, CommitId, CommitMessage, ContentTrackingService};
 
 #[derive(PartialOrd, PartialEq, Debug, Eq, Hash)]
@@ -33,12 +34,15 @@ struct PackageDto {
 #[derive(Deserialize, Debug)]
 struct ManifestDto {
     package: PackageDto,
+    release: Vec<ReleaseDto>,
+    standard: Vec<StandardDto>,
 }
 
 #[derive(Debug)]
 pub struct Manifest {
     id: PackageId,
     pub files: HashSet<FileDescription>,
+    pub compliance_matrix: ComplianceMatrix,
 }
 
 impl FromStr for Manifest {
@@ -49,13 +53,13 @@ impl FromStr for Manifest {
         let id = PackageId::from(&dto.package.id).ok_or(())?;
         Ok(Manifest {
             id,
-            // name: PackageName(dto.name),
             files: dto
                 .package
                 .files
                 .into_iter()
                 .map(|f| FileDescription(f))
                 .collect(),
+            compliance_matrix: compliance_matrix(dto.release, dto.standard),
         })
     }
 }
@@ -149,7 +153,8 @@ mod tests {
     use std::path::PathBuf;
     use std::str::FromStr;
 
-    use crate::packaging::{DocumentationPackagingService, FileDescription, Manifest};
+    use crate::packaging::{DocumentationPackagingService, FileDescription, Manifest, ManifestDto};
+    use crate::compliance::compliance_matrix;
     use crate::tracking::{CommitMessage, ContentTrackingService};
 
     const TEST_ROOT_PATH: &str = "target/test-packaging-integration";

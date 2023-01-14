@@ -2,5 +2,45 @@
 id = "docpkg"
 name = "Documentation Packager"
 files = [
-  "README.md"
+  "README.md",
+  "table/compliance-matrix.csv",
 ]
+
+[[release]]
+id = "v1"
+
+[[release]]
+id = "v2"
+
+[[standard]]
+id = "SemVer 2.0.0"
+
+[[standard.requirement]]
+id = "1"
+
+[[standard.requirement.since.v1.control]]
+doc = "README.md"
+annotation = "See CLI definition"
+
+[[standard.requirement.since.v1.control]]
+code = "src/main.rs"
+
+# Example
+[standard.requirement.since.v2.out]
+
+[[standard.requirement]]
+id = "2"
+
+[[standard.requirement.since.v1.control]]
+code = "Cargo.toml"
+
+[[standard]]
+title = "Conventional Commits 1.0.0"
+uri = "https://www.conventionalcommits.org/en/v1.0.0/"
+
+[[standard.requirement]]
+id = "1"
+annotation = "Keeping merge commits out of scope."
+
+[[standard.requirement]]
+id = "2"

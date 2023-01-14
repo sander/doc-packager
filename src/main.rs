@@ -18,19 +18,26 @@ use docpkg::tracking::SemanticVersion;
 
 // #[risk("Some risk annotation")]
 fn cli() -> Command {
+    let dir = arg!(<dir> "The source root path").value_parser(clap::value_parser!(PathBuf));
     Command::new("docpkg")
         .about("Documentation Packager")
         .subcommand_required(true)
         .subcommand(
             Command::new("edit")
                 .about("Edits a documentation package")
-                .arg(arg!(<dir> "The source root path").value_parser(clap::value_parser!(PathBuf)))
+                .arg(&dir)
                 .arg_required_else_help(true),
         )
         .subcommand(
             Command::new("publish")
                 .about("Publishes a documentation package")
-                .arg(arg!(<dir> "The source root path").value_parser(clap::value_parser!(PathBuf)))
+                .arg(&dir)
+                .arg_required_else_help(true),
+        )
+        .subcommand(
+            Command::new("audit")
+                .about("Creates a compliance matrix for auditing")
+                .arg(&dir)
                 .arg_required_else_help(true),
         )
 }
@@ -65,6 +72,19 @@ fn main() {
             println!("Publishing {:?}", path);
             let service = DocumentationPackagingService::open(path.clone());
             service.publish();
+        }
+        Some(("audit", sub_matches)) => {
+            let path = sub_matches.get_one::<PathBuf>("dir").expect("required");
+            let manifest_path = path.join("Docpkg.toml");
+            let contents = fs::read_to_string(manifest_path).unwrap();
+            let manifest = Manifest::from_str(&contents).unwrap();
+            let mut s = String::new();
+            manifest.compliance_matrix.to_csv(&mut s);
+            let table_path = path.join("table");
+            fs::create_dir_all(&table_path).unwrap();
+            let file_path = table_path.join("compliance.csv");
+            fs::write(&file_path, s).unwrap();
+            println!("Written to {}", file_path.to_string_lossy());
         }
         _ => unreachable!(),
     }

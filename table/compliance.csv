@@ -1,0 +1,8 @@
+"Standard","Requirement","Annotation","v1: Design","v2: Design"
+"SemVer 2.0.0","1","N/A","Document: README.md
+See CLI definition
+
+Code: src/main.rs","N/A"
+"SemVer 2.0.0","2","N/A","Code: Cargo.toml","Code: Cargo.toml"
+"Conventional Commits 1.0.0","1","Keeping merge commits out of scope.","?","?"
+"Conventional Commits 1.0.0","2","N/A","?","?"
