@@ -206,7 +206,7 @@ pub fn compliance_matrix(release: Vec<ReleaseDto>, standard: Vec<StandardDto>) -
 }
 
 fn escape(s: &str) -> String {
-    format!("\"{}\"", s.replace("\"", "\\\""))
+    format!("\"{}\"", s.replace("\"", "\"\""))
 }
 
 fn write_row<W: Write>(w: &mut W, r: &Vec<String>) {
