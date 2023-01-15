@@ -107,8 +107,9 @@ pub struct Demo {
     instructions: Vec<String>,
 }
 
-#[derive(Debug, Clone)]
+#[derive(Debug, Clone, PartialEq)]
 pub enum ControlDesignEvidence {
+    None,
     Document(PathBuf),
     Code(PathBuf),
 }
@@ -161,6 +162,7 @@ pub fn compliance_matrix(release: Vec<ReleaseDto>, standard: Vec<StandardDto>) -
                                                 (None, Some(doc)) => {
                                                     ControlDesignEvidence::Document(doc.clone())
                                                 }
+                                                (None, None) => ControlDesignEvidence::None,
                                                 _ => panic!("invalid design evidence"),
                                             },
                                             annotation: c.annotation.clone(),
@@ -278,6 +280,7 @@ impl ComplianceMatrix {
                                 .map(|control| {
                                     let mut s = String::new();
                                     match &control.design_evidence {
+                                        ControlDesignEvidence::None => Ok(()),
                                         ControlDesignEvidence::Code(path) => {
                                             write!(s, "Code: {}", path.to_string_lossy())
                                         }
@@ -287,6 +290,12 @@ impl ComplianceMatrix {
                                     }
                                     .unwrap();
                                     match &control.annotation {
+                                        Some(a)
+                                            if &control.design_evidence
+                                                == &ControlDesignEvidence::None =>
+                                        {
+                                            write!(s, "{}", a).unwrap()
+                                        }
                                         Some(a) => write!(s, "\n{}", a).unwrap(),
                                         None => (),
                                     };
