@@ -140,15 +140,15 @@ This package definition alone can already be useful in helping you collect relev
 
 ## How to process the data
 
-Ensure Documentation Packager is properly installed. Run `docpkg help` to be sure.
+> **Note**: Perhaps you are working in an environment where you cannot install and run Documentation Packager locally, but where it is run by a continuous integration service such as GitHub Actions. In that case, skip the first instruction for running the command yourself.
 
-To process compliance data, run:
+Ensure Documentation Packager is properly installed. Run `docpkg help` to be sure. To process compliance data, run from within the directory that contains `Docpkg.toml`:
 
 ```
 docpkg audit .
 ```
 
-assuming that you are working in the directory that contains `Docpkg.toml`. This command will automatically generate two tables as [comma-separated values (CSV)](https://en.wikipedia.org/wiki/Comma-separated_values) files:
+This command will automatically generate two tables as [comma-separated values (CSV)](https://en.wikipedia.org/wiki/Comma-separated_values) files:
 
 - `table/audits.csv`: an overview of documented last audits
 - `table/compliance.csv`: a requirements compliance matrix listing for each requirement the optional annotation and the evidence per release

@@ -2,7 +2,7 @@ Create a manifest file `Docpkg.toml` in your project root directory. In your con
 
 The `edit` command handles transclusions. This enables you to combine multiple evergreen notes into a single document. See this file’s source code for an example.
 
-The `audit` command creates a compliance matrix. This enables you to create systems that are compliant by design. See [table/compliance.csv](table/compliance.csv) for an example and [How to track compliance?](notes/evergreen/How%20to%20track%20compliance?.md) for guidance.
+The `audit` command creates a compliance matrix. This enables you to create systems that are compliant by design. See [table/compliance.csv](table/compliance.csv) for an example and [How to track compliance?](notes/evergreen/How%20to%20track%20compliance%20data%3F.md) for guidance.
 
 The `publish` command publishes the three listed files from your working directory to the origin repository on branch `docpkg/my-package-name/<branch-name>`, where `<branch-name>` is the name of your current working branch. This enables easy access to documentation generated during continuous integration.
 
