@@ -4,6 +4,7 @@ name = "Documentation Packager"
 files = [
   "README.md",
   "table/compliance.csv",
+  "notes/evergreen/How to track compliance?.md",
 ]
 
 [[release]]
