@@ -1,4 +1,7 @@
-#!/usr/bin/env -S scala-cli shebang
+#!/usr/bin/env -S scala-cli --cli-version 0.1.20 shebang
+
+//> using jvm "temurin:1.17"
+//> using scala "3.2.2"
 
 import java.io.FileFilter
 import java.io.File
