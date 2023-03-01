@@ -1,7 +1,5 @@
 # Documentation Packager
 
-## Context
-
 <!-- Start transclusion: notes/evergreen/Documentation Packager.md -->
 **Documentation Packager** enables product developers to combine evergreen and living documentation into human-readable packages, in order to collaborate effectively with stakeholders on complex systems.
 <!-- End transclusion -->
@@ -45,3 +43,9 @@ Build this project using [Cargo](https://doc.rust-lang.org/cargo/).
 ## Additional documentation integration scripts
 
 This repository contains a set of standalone [scripts for documentation integration](scripts/README.md).
+
+## Related resources
+
+- [Security policy](SECURITY.md)
+- [License](LICENSE.md)
+- [How to track compliance data?](notes/evergreen/How%20to%20track%20compliance%20data%3F.md)
