@@ -94,7 +94,7 @@ dependencies = [
  "pretty_env_logger",
  "regex",
  "relative-path",
- "rustix 0.37.1",
+ "rustix 0.37.2",
  "serde",
  "serde_derive",
  "toml",
@@ -371,9 +371,9 @@ dependencies = [
 
 [[package]]
 name = "rustix"
-version = "0.37.1"
+version = "0.37.2"
 source = "registry+https://github.com/rust-lang/crates.io-index"
-checksum = "d4790277f605573dd24b6751701e0823582a63c7cafc095e427e6c66e45dd75e"
+checksum = "4c15a5df2a134dbbdc6270495e30c8b05dd6211478d0a6d427d4d7c16e3d7980"
 dependencies = [
  "bitflags",
  "errno 0.3.0",
