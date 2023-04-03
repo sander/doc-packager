@@ -94,7 +94,7 @@ dependencies = [
  "pretty_env_logger",
  "regex",
  "relative-path",
- "rustix 0.37.1",
+ "rustix 0.37.6",
  "serde",
  "serde_derive",
  "toml",
@@ -231,9 +231,9 @@ dependencies = [
 
 [[package]]
 name = "libc"
-version = "0.2.137"
+version = "0.2.140"
 source = "registry+https://github.com/rust-lang/crates.io-index"
-checksum = "fc7fcc620a3bff7cdd7a365be3376c97191aeaccc2a603e600951e452615bf89"
+checksum = "99227334921fae1a979cf0bfdfcc6b3e5ce376ef57e16fb6fb3ea2ed6095f80c"
 
 [[package]]
 name = "linux-raw-sys"
@@ -371,9 +371,9 @@ dependencies = [
 
 [[package]]
 name = "rustix"
-version = "0.37.1"
+version = "0.37.6"
 source = "registry+https://github.com/rust-lang/crates.io-index"
-checksum = "d4790277f605573dd24b6751701e0823582a63c7cafc095e427e6c66e45dd75e"
+checksum = "d097081ed288dfe45699b72f5b5d648e5f15d64d900c7080273baa20c16a6849"
 dependencies = [
  "bitflags",
  "errno 0.3.0",
